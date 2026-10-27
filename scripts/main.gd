@@ -474,7 +474,10 @@ func _draw_battle() -> void:
 
 	# Battlefield slots: up to four heroes, with transparent hitboxes and
 	# compact health/status UI underneath each model. Empty space in the middle.
-	var hero_positions: Array[float] = [410.0] if combat.party.size() == 1 else [142.0, 340.0, 538.0, 736.0]
+	var hero_positions: Array[float] = [142.0, 340.0, 538.0, 736.0]
+	if combat.party.size() == 1:
+		hero_positions.clear()
+		hero_positions.append(410.0)
 	for i in range(mini(combat.party.size(), 4)):
 		_draw_hero_unit(combat.party[i], hero_positions[i])
 	for i in range(combat.enemies.size()):
