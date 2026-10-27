@@ -434,27 +434,36 @@ func _draw_enemy_unit(enemy: Dictionary, index: int, enemy_count: int) -> void:
 	_label(region, "%d / %d" % [int(enemy["hp"]), int(enemy["max_hp"])], Vector2(0, 289), Vector2(width, 23), 16, Color("fff8f4")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label(region, "◆ %d" % int(enemy["block"]) if alive else "DEFEATED", Vector2(0, 312), Vector2(width, 22), 14, Color("9ed8fa") if alive else Color("f5a2a2")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-func _draw_battle() -> void:
-	# Minimal black-metal header: logo left, intentional empty center, utilities right.
+func _draw_shared_header(for_map: bool = false) -> void:
+	# Single source of truth for the header in MAP and COMBAT.
+	# Every size, location, icon, style and control is shared.
 	var header: Panel = _panel(ui_root, Vector2(8, 7), Vector2(1584, 70), Color("0b131f"))
 	var header_style: StyleBoxFlat = header.get_theme_stylebox("panel") as StyleBoxFlat
 	header_style.border_color = Color("3d5164")
 	header_style.set_corner_radius_all(5)
 	_image(header, "res://art/ui/aptitude_logo.png", Vector2(20, 9), Vector2(300, 54))
-	# Current coin balance, followed by three empty potion slots.
 	_image(header, "res://art/ui/coin.png", Vector2(1084, 15), Vector2(38, 38))
-	_label(header, str(combat.coins), Vector2(1128, 20), Vector2(44, 35), 23, Color("f9e9c5"))
-	if run_state.state == "battle":
-		_label(header, "ACT 1  /  " + run_state.floor_label().to_upper(), Vector2(354, 18), Vector2(565, 43), 19, Color("e9bd71"))
+	var show_run: bool = for_map or run_state.state == "battle"
+	var displayed_coins: int = run_state.coins if for_map else combat.coins
+	_label(header, str(displayed_coins), Vector2(1128, 20), Vector2(44, 35), 23, Color("f9e9c5"))
 	for i in range(3):
-		var pot_slot: Panel = _panel(header, Vector2(1184 + i * 44, 17), Vector2(34, 37), Color("142030"))
-		var pot_style: StyleBoxFlat = pot_slot.get_theme_stylebox("panel") as StyleBoxFlat
-		pot_style.border_color = Color("465d72")
-		pot_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var active_definition: Dictionary = combat.heroes[str(combat.active_hero)]
-	var deck_count: int = run_state.deck.size() if run_state.state == "battle" else active_definition["starter_deck"].size()
-	_hud_button(header, "DECK (%d)" % deck_count, Vector2(1326, 13), Vector2(132, 45), _open_overlay.bind("deck"), "res://art/ui/deck.png")
-	_hud_button(header, "SETTINGS", Vector2(1464, 13), Vector2(113, 45), _open_overlay.bind("settings"), "res://art/ui/gear.png")
+		var slot: Panel = _panel(header, Vector2(1184 + i * 44, 17), Vector2(34, 37), Color("142030"))
+		var slot_style: StyleBoxFlat = slot.get_theme_stylebox("panel") as StyleBoxFlat
+		slot_style.border_color = Color("465d72")
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var focus_id: String = run_state.hero_id if for_map else str(combat.active_hero)
+	var definition: Dictionary = combat.heroes[focus_id]
+	var card_count: int = run_state.deck.size() if show_run else definition["starter_deck"].size()
+	_hud_button(header, "DECK (%d)" % card_count, Vector2(1326, 13), Vector2(132, 45),
+		_open_overlay.bind("deck"), "res://art/ui/deck.png")
+	_hud_button(header, "SETTINGS", Vector2(1464, 13), Vector2(113, 45),
+		_open_overlay.bind("settings"), "res://art/ui/gear.png")
+	if show_run:
+		_label(header, "ACT 1  /  " + run_state.floor_label().to_upper(),
+			Vector2(354, 18), Vector2(565, 43), 19, Color("e9bd71"))
+
+func _draw_battle() -> void:
+	_draw_shared_header(false)
 
 	var stage: Panel = _panel(ui_root, Vector2(20, 89), Vector2(1560, 545), Color("26323b"))
 	var wallpaper_path: String = combat.battlefield_background
@@ -609,7 +618,7 @@ func _open_overlay(kind: String) -> void:
 	_cancel_drag()
 	overlay_screen = kind
 	if kind == "deck":
-		deck_focus_id = str(combat.active_hero)
+		deck_focus_id = run_state.hero_id if screen == "act1_map" else str(combat.active_hero)
 	_redraw()
 
 func _close_overlay() -> void:
@@ -653,11 +662,13 @@ func _draw_overlay() -> void:
 		if deck_focus_id == "" or not combat.heroes.has(deck_focus_id):
 			deck_focus_id = str(combat.active_hero)
 		var hero_def: Dictionary = combat.heroes[deck_focus_id]
-		var deck: Array = run_state.deck if run_state.state == "battle" and deck_focus_id == run_state.hero_id else hero_def["starter_deck"]
+		var run_deck: bool = screen == "act1_map" or run_state.state == "battle"
+		var deck: Array = run_state.deck if run_deck and deck_focus_id == run_state.hero_id else hero_def["starter_deck"]
 		_label(modal, "DECK INVENTORY", Vector2(38, 20), Vector2(560, 50), 30, Color("f9d18a"))
 		_label(modal, str(hero_def["name"]) + "  •  %d cards" % deck.size(), Vector2(40, 75), Vector2(650, 32), 21, Color("bdcddb"))
-		for i in range(combat.party.size()):
-			var id: String = str(combat.party[i]["id"])
+		var hero_tabs: Array = [run_state.hero_id] if run_deck else combat.party.map(func(hero): return str(hero["id"]))
+		for i in range(hero_tabs.size()):
+			var id: String = str(hero_tabs[i])
 			var heroname: String = str(combat.heroes[id]["name"])
 			var tab: Button = _hud_button(modal, heroname, Vector2(37 + i * 299, 124), Vector2(275, 45), _switch_deck_hero.bind(id))
 			if id == deck_focus_id:
