@@ -76,6 +76,13 @@ jobs:
             Tee-Object -FilePath test-results/content_expansion.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Probe realistic 60-HP solo progression and seeded reproducibility
+        shell: pwsh
+        run: |
+          & $env:GODOT_EXE --headless --path . --script res://tests/solo_difficulty_probe_test.gd 2>&1 |
+            Tee-Object -FilePath test-results/solo_difficulty_probe.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Smoke-test main scene and clean audio shutdown
         shell: pwsh
         run: |
