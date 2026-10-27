@@ -58,7 +58,7 @@ jobs:
         run: |
           set -o pipefail
           xvfb-run --auto-servernum --server-args="-screen 0 1600x900x24" \
-            timeout 150s aptitude-godot --path . --resolution 1600x900 \
+            timeout 150s aptitude-godot --verbose --path . --resolution 1600x900 \
             --rendering-method gl_compatibility --script res://tests/visual_smoke_test.gd \
             2>&1 | tee test-results/visual_smoke.log
           # Godot's process can exit 0 even when it reports leaked objects.
