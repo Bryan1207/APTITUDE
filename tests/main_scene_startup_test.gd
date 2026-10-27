@@ -27,8 +27,14 @@ func _run() -> void:
         push_error("FAIL: main menu background music was not initialized")
     # Exercise the real _exit_tree() cleanup and wait for audio shutdown.
     game.queue_free()
-    for _frame in range(8):
+    # The audio mix thread may still hold an MP3 playback reference after
+    # queue_free. Give it several real engine frames to observe stop() and
+    # release the stream before the headless process exits.
+    for _frame in range(30):
         await process_frame
+    if is_instance_valid(music):
+        failures += 1
+        push_error("FAIL: background audio node survived scene teardown")
     game = null
     if failures == 0:
         print("PASS: main scene starts and releases its audio on exit")
