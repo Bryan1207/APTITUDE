@@ -76,12 +76,15 @@ jobs:
             Tee-Object -FilePath test-results/content_expansion.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Launch main scene headlessly for 10 frames
+      - name: Smoke-test main scene and clean audio shutdown
         shell: pwsh
         run: |
-          & $env:GODOT_EXE --headless --path . --quit-after 10 2>&1 |
+          & $env:GODOT_EXE --headless --path . --script res://tests/main_scene_startup_test.gd 2>&1 |
             Tee-Object -FilePath test-results/main_scene_startup.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (Select-String -Path test-results/main_scene_startup.log -Pattern 'ObjectDB instances were leaked|resources still in use at exit' -Quiet) {
+            throw 'Godot leaked objects or resources during main scene shutdown.'
+          }
 
       - name: Save test logs (even if a test fails)
         if: always()
