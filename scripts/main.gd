@@ -4,11 +4,13 @@ extends Control
 # Card actions enter the authoritative live FIFO only on a valid drop.
 const Combat = preload("res://scripts/combat_engine.gd")
 const MenuFlow = preload("res://scripts/menu_flow.gd")
+const Act1Run = preload("res://scripts/act1_run.gd")
 const STAGE_W := 1600.0
 const STAGE_H := 900.0
 
 var combat = Combat.new()
 var menu_flow
+var run_state: AptitudeAct1Run = Act1Run.new()
 var screen: String = "home"
 var ui_root: Control
 var drag_state: Dictionary = {}
@@ -32,7 +34,7 @@ func _ready() -> void:
 	menu_flow = MenuFlow.new(self)
 	_load_preferences()
 	_start_music()
-	combat.changed.connect(_redraw)
+	combat.changed.connect(_on_combat_changed)
 	_redraw()
 
 func _start_music() -> void:
@@ -98,6 +100,49 @@ func _begin_single_player() -> void:
 	overlay_screen = ""
 	screen = "battle"
 	combat.start(["bryan", "carlos", "manny", "cristian_hb"])
+
+func _begin_act1_run(hero_id: String) -> void:
+	if not combat.heroes.has(hero_id):
+		push_error("Cannot start Act 1 with an unknown hero: " + hero_id)
+		return
+	run_state.start_new(hero_id, int(combat.heroes[hero_id]["max_hp"]))
+	overlay_screen = ""
+	screen = "act1_map"
+	_redraw()
+
+func _enter_act1_node(id: String) -> void:
+	if not run_state.choose_node(id):
+		return
+	overlay_screen = ""
+	if run_state.state == "battle":
+		# Solo: exactly one hero and one deck; Act 1 resources persist.
+		screen = "battle"
+		combat.start([run_state.hero_id], run_state.encounter_id(), run_state.combat_options())
+	else:
+		screen = "act1_" + run_state.state
+		_redraw()
+
+func _act1_resolve(choice: String) -> void:
+	var resolved: bool = false
+	if run_state.state == "reward":
+		resolved = run_state.claim_reward(choice)
+	else:
+		resolved = run_state.resolve_node(choice)
+	if resolved:
+		screen = "act1_map"
+		_redraw()
+
+func _on_combat_changed() -> void:
+	if run_state.state == "battle" and screen == "battle" and (combat.phase == "victory" or combat.phase == "defeat"):
+		var hero: Dictionary = combat.hero_by_id(run_state.hero_id)
+		var hero_hp: int = int(hero.get("hp", 0))
+		var hero_max_hp: int = int(hero.get("max_hp", run_state.max_hp))
+		run_state.finish_battle(hero_hp, hero_max_hp, combat.coins, combat.phase == "victory")
+		match run_state.state:
+			"reward": screen = "act1_reward"
+			"complete": screen = "act1_complete"
+			"defeat": screen = "act1_defeat"
+	_redraw()
 
 func _process(delta: float) -> void:
 	if drag_state.is_empty():
@@ -397,13 +442,15 @@ func _draw_battle() -> void:
 	# Current coin balance, followed by three empty potion slots.
 	_image(header, "res://art/ui/coin.png", Vector2(1084, 15), Vector2(38, 38))
 	_label(header, str(combat.coins), Vector2(1128, 20), Vector2(44, 35), 23, Color("f9e9c5"))
+	if run_state.state == "battle":
+		_label(header, "ACT 1  /  " + run_state.floor_label().to_upper(), Vector2(354, 18), Vector2(565, 43), 19, Color("e9bd71"))
 	for i in range(3):
 		var pot_slot: Panel = _panel(header, Vector2(1184 + i * 44, 17), Vector2(34, 37), Color("142030"))
 		var pot_style: StyleBoxFlat = pot_slot.get_theme_stylebox("panel") as StyleBoxFlat
 		pot_style.border_color = Color("465d72")
 		pot_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var active_definition: Dictionary = combat.heroes[str(combat.active_hero)]
-	var deck_count: int = active_definition["starter_deck"].size()
+	var deck_count: int = run_state.deck.size() if run_state.state == "battle" else active_definition["starter_deck"].size()
 	_hud_button(header, "DECK (%d)" % deck_count, Vector2(1326, 13), Vector2(132, 45), _open_overlay.bind("deck"), "res://art/ui/deck.png")
 	_hud_button(header, "SETTINGS", Vector2(1464, 13), Vector2(113, 45), _open_overlay.bind("settings"), "res://art/ui/gear.png")
 
@@ -427,7 +474,7 @@ func _draw_battle() -> void:
 
 	# Battlefield slots: up to four heroes, with transparent hitboxes and
 	# compact health/status UI underneath each model. Empty space in the middle.
-	var hero_positions: Array[float] = [142.0, 340.0, 538.0, 736.0]
+	var hero_positions: Array[float] = [410.0] if combat.party.size() == 1 else [142.0, 340.0, 538.0, 736.0]
 	for i in range(mini(combat.party.size(), 4)):
 		_draw_hero_unit(combat.party[i], hero_positions[i])
 	for i in range(combat.enemies.size()):
@@ -456,7 +503,8 @@ func _draw_battle() -> void:
 		if usable:
 			card_tile.mouse_filter = Control.MOUSE_FILTER_STOP
 			card_tile.gui_input.connect(_on_card_input.bind(i, str(current["id"])))
-	_hud_button(ui_root, "END TURN", Vector2(1351, 746), Vector2(212, 71), _done, "", true)
+	if combat.phase == "player":
+		_hud_button(ui_root, "END TURN", Vector2(1351, 746), Vector2(212, 71), _done, "", true)
 	if bool(current["done"]):
 		_label(ui_root, "Waiting for other heroes", Vector2(1330, 829), Vector2(252, 24), 14, Color("b0c5d4")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if combat.phase == "victory" or combat.phase == "defeat":
@@ -600,7 +648,7 @@ func _draw_overlay() -> void:
 		if deck_focus_id == "" or not combat.heroes.has(deck_focus_id):
 			deck_focus_id = str(combat.active_hero)
 		var hero_def: Dictionary = combat.heroes[deck_focus_id]
-		var deck: Array = hero_def["starter_deck"]
+		var deck: Array = run_state.deck if run_state.state == "battle" and deck_focus_id == run_state.hero_id else hero_def["starter_deck"]
 		_label(modal, "DECK INVENTORY", Vector2(38, 20), Vector2(560, 50), 30, Color("f9d18a"))
 		_label(modal, str(hero_def["name"]) + "  •  %d cards" % deck.size(), Vector2(40, 75), Vector2(650, 32), 21, Color("bdcddb"))
 		for i in range(combat.party.size()):

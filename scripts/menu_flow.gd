@@ -44,7 +44,10 @@ func _continue_selection() -> void:
 func _confirm_selection() -> void:
     if selected_id == "" or not bios.has(selected_id):
         return
-    _go("act1_map" if mode == "single" else "lobby")
+    if mode == "single":
+        host._begin_act1_run(selected_id)
+    else:
+        _go("lobby")
 
 func _open_settings() -> void:
     host._open_overlay("settings")
@@ -191,6 +194,7 @@ func draw(screen_name: String) -> void:
         "select": _draw_select()
         "bio": _draw_bio()
         "act1_map": _draw_act1_map()
+        "act1_reward", "act1_rest", "act1_shop", "act1_event", "act1_complete", "act1_defeat": _draw_act1_action(screen_name)
         "lobby": _draw_lobby()
 
 func _draw_home() -> void:
@@ -262,19 +266,135 @@ func _draw_bio() -> void:
     _button(canvas, "BackFromBioButton", "BACK", Rect2(61, 792, 221, 65), func(): _go("select"))
     _button(canvas, "ConfirmHeroButton", "CONFIRM", Rect2(1298, 792, 245, 65), _confirm_selection, true)
 
+func _map_center(node: Dictionary) -> Vector2:
+    if str(node["kind"]) == "boss":
+        return Vector2(800, 238)
+    return Vector2(499 + 301 * int(node["lane"]), 750 - 33 * int(node["floor"]))
+
+func _map_button(parent: Control, node: Dictionary, available: bool, visited: bool) -> void:
+    var point: Vector2 = _map_center(node)
+    var kind: String = str(node["kind"])
+    var btn := Button.new()
+    btn.name = "MapNode" + str(node["id"]).replace("_", "")
+    btn.position = point - Vector2(77, 14)
+    btn.size = Vector2(154, 28)
+    btn.text = kind.to_upper()
+    btn.disabled = not available
+    btn.focus_mode = Control.FOCUS_ALL if available else Control.FOCUS_NONE
+    btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if available else Control.CURSOR_ARROW
+    btn.add_theme_font_size_override("font_size", 13)
+    btn.add_theme_color_override("font_color", Color("ffe9af"))
+    btn.add_theme_color_override("font_disabled_color", Color("b1bfcc") if visited else Color("697a8d"))
+    var box := StyleBoxFlat.new()
+    box.bg_color = Color("554022") if available else (Color("283d40") if visited else Color("172838"))
+    box.border_color = GOLD if available else (Color("6eab98") if visited else Color("485d71"))
+    box.set_border_width_all(2 if available or visited else 1)
+    box.set_corner_radius_all(7)
+    var hover := box.duplicate() as StyleBoxFlat
+    hover.bg_color = Color("826235")
+    hover.border_color = Color("fff1c4")
+    btn.add_theme_stylebox_override("normal", box)
+    btn.add_theme_stylebox_override("disabled", box)
+    btn.add_theme_stylebox_override("hover", hover)
+    btn.add_theme_stylebox_override("pressed", hover)
+    btn.add_theme_stylebox_override("focus", hover)
+    btn.pressed.connect(_choose_node.bind(str(node["id"])))
+    parent.add_child(btn)
+
+func _choose_node(id: String) -> void:
+    host._enter_act1_node(id)
+
 func _draw_act1_map() -> void:
     var canvas := _screen_background()
-    _header(canvas, "ACT 1  •  THE CONSTRUCTION ZONE", "15 FLOORS  +  THE ALEXTRON BOSS")
-    _panel(canvas, Rect2(253, 242, 1094, 501), Color("142332"), Color("a48351"))
-    _add_label(canvas, "CHOOSE YOUR PATH", Rect2(382, 269, 839, 57), 35, GOLD, true)
-    for i in range(3):
-        var x: float = 437.0 + 271.0 * float(i)
-        _panel(canvas, Rect2(x, 377, 175, 138), Color("203749"), Color("8ba3b4"))
-        _add_label(canvas, ["COMBAT", "EVENT", "COMBAT"][i], Rect2(x, 416, 175, 51), 22, TEXT, true)
-    _add_label(canvas, "Branching map navigation arrives in Milestone 2.", Rect2(354, 567, 894, 43), 21, MUTED, true)
-    _add_label(canvas, "For now the original four-hero encounter remains available as a preview.", Rect2(325, 618, 954, 33), 17, MUTED, true)
-    _button(canvas, "BackFromMapButton", "BACK", Rect2(60, 792, 222, 65), func(): _go("select"))
-    _button(canvas, "CombatPreviewButton", "COMBAT PREVIEW", Rect2(1251, 792, 294, 65), _start_combat_preview, true)
+    var run: AptitudeAct1Run = host.run_state
+    _header(canvas, "ACT 1 — THE CONSTRUCTION ZONE", "15 FLOORS   •   CHOOSE A CONNECTED PATH   •   ALEXTRON AT THE TOP")
+    _panel(canvas, Rect2(309, 214, 987, 567), Color("101f2e"), Color("a48351"))
+    var available: Array = run.available_nodes()
+    var available_ids: Array[String] = []
+    for node in available:
+        available_ids.append(str(node["id"]))
+    # Draw connections beneath all clickable nodes.
+    for row in run.floors:
+        for node in row:
+            var from: Vector2 = _map_center(node)
+            for target_id in node["next"]:
+                var next_node: Dictionary = run.node_by_id(str(target_id))
+                if next_node.is_empty():
+                    continue
+                var connection := Line2D.new()
+                connection.points = PackedVector2Array([from, _map_center(next_node)])
+                connection.width = 1.5
+                connection.default_color = Color("4b5e6e", 0.70)
+                canvas.add_child(connection)
+    for level in range(run.FLOOR_COUNT):
+        var node_y: float = 750.0 - 33.0 * float(level)
+        _add_label(canvas, "%02d" % (level + 1), Rect2(333, node_y - 12, 50, 24), 15, MUTED)
+        for node in run.floors[level]:
+            var id: String = str(node["id"])
+            _map_button(canvas, node, available_ids.has(id), run.visited.has(id))
+    _map_button(canvas, run.boss, available_ids.has(str(run.boss["id"])), run.visited.has(str(run.boss["id"])))
+    # Run state shown beside the full map, rather than hiding the route.
+    _panel(canvas, Rect2(1315, 244, 263, 456), Color("142636"), Color("65788a"))
+    _add_label(canvas, "YOUR RUN", Rect2(1334, 264, 227, 48), 24, GOLD, true)
+    var hero_def: Dictionary = _hero(run.hero_id)
+    _add_label(canvas, str(hero_def.get("name", run.hero_id)), Rect2(1333, 329, 223, 40), 24, TEXT, true)
+    _add_label(canvas, "HP: %d / %d" % [run.hp, run.max_hp], Rect2(1337, 399, 208, 42), 19, TEXT)
+    _add_label(canvas, "COINS: %d" % run.coins, Rect2(1337, 455, 208, 42), 19, TEXT)
+    _add_label(canvas, "DECK: %d CARDS" % run.deck.size(), Rect2(1337, 511, 213, 42), 19, TEXT)
+    _add_label(canvas, run.floor_label().to_upper(), Rect2(1334, 583, 227, 45), 17, GOLD, true)
+    _add_label(canvas, "MAP SEED: %d" % run.seed, Rect2(1337, 649, 230, 26), 13, MUTED)
+    _add_label(canvas, "GLOWING NODES = AVAILABLE", Rect2(409, 786, 777, 37), 17, GOLD, true)
+    _button(canvas, "ExitRunButton", "EXIT RUN", Rect2(55, 809, 211, 65), func(): _go("home"))
+
+func _draw_act1_action(destination: String) -> void:
+    var canvas := _screen_background()
+    var run: AptitudeAct1Run = host.run_state
+    _header(canvas, "ACT 1 — THE CONSTRUCTION ZONE", "YOUR PATH  •  " + run.floor_label().to_upper())
+    _panel(canvas, Rect2(246, 230, 1108, 514), Color("142433"), Color("aa8453"))
+    _add_label(canvas, "HP %d/%d  •  COINS %d  •  DECK %d" %
+        [run.hp, run.max_hp, run.coins, run.deck.size()],
+        Rect2(292, 269, 1024, 56), 24, MUTED, true)
+    match destination:
+        "act1_reward":
+            _add_label(canvas, "COMBAT VICTORY", Rect2(347, 347, 922, 68), 43, GOLD, true)
+            _add_label(canvas, "Choose one reward before returning to the map.", Rect2(347, 428, 922, 45), 21, TEXT, true)
+            _button(canvas, "RewardAttackButton", "ADD ATTACK", Rect2(314, 554, 293, 72), _resolve_action.bind("attack"), true)
+            _button(canvas, "RewardBlockButton", "ADD BLOCK", Rect2(655, 554, 293, 72), _resolve_action.bind("block"))
+            _button(canvas, "RewardRepairButton", "REPAIR +8 HP", Rect2(995, 554, 293, 72), _resolve_action.bind("repair"))
+        "act1_rest":
+            _add_label(canvas, "REST SITE", Rect2(347, 347, 922, 68), 43, GOLD, true)
+            _add_label(canvas, "Repair yourself or reinforce your maximum HP.", Rect2(347, 428, 922, 45), 21, TEXT, true)
+            _button(canvas, "RestHealButton", "HEAL +12", Rect2(412, 550, 360, 73), _resolve_action.bind("heal"), true)
+            _button(canvas, "RestUpgradeButton", "MAX HP +5", Rect2(827, 550, 360, 73), _resolve_action.bind("upgrade"))
+        "act1_event":
+            _add_label(canvas, "UNEXPECTED DISCOVERY", Rect2(347, 347, 922, 68), 43, GOLD, true)
+            _add_label(canvas, "The crew finds a supply cache in the ruins.", Rect2(347, 428, 922, 45), 21, TEXT, true)
+            _button(canvas, "EventSalvageButton", "SALVAGE +20 COINS", Rect2(410, 550, 368, 73), _resolve_action.bind("salvage"), true)
+            _button(canvas, "EventRepairButton", "REPAIR +8 HP", Rect2(827, 550, 360, 73), _resolve_action.bind("repair"))
+        "act1_shop":
+            _add_label(canvas, "CONSTRUCTION SUPPLY DEPOT", Rect2(340, 347, 940, 68), 39, GOLD, true)
+            _add_label(canvas, "Spend coins or continue to the next floor.", Rect2(347, 428, 922, 45), 21, TEXT, true)
+            _button(canvas, "ShopHealButton", "HEAL +15   •   20", Rect2(303, 546, 302, 74),
+                _resolve_action.bind("heal"), true, run.coins >= 20)
+            _button(canvas, "ShopUpgradeButton", "MAX HP +5   •   30", Rect2(649, 546, 302, 74),
+                _resolve_action.bind("upgrade"), false, run.coins >= 30)
+            _button(canvas, "ShopLeaveButton", "LEAVE", Rect2(995, 546, 302, 74),
+                _resolve_action.bind("leave"))
+        "act1_complete":
+            _add_label(canvas, "ALEXTRON SENTINEL DEFEATED", Rect2(302, 343, 1002, 80), 40, GOLD, true)
+            _add_label(canvas, "ACT 1 COMPLETE", Rect2(353, 442, 896, 64), 35, TEXT, true)
+            _add_label(canvas, "Act 2 is coming soon. Your run ends here for now.", Rect2(353, 510, 896, 54), 21, MUTED, true)
+            _button(canvas, "CompleteReturnButton", "RETURN TO MAIN MENU",
+                Rect2(581, 600, 441, 75), func(): _go("home"), true)
+        "act1_defeat":
+            _add_label(canvas, "RUN DEFEATED", Rect2(350, 354, 902, 77), 44, Color("f38b8d"), true)
+            _add_label(canvas, "You reached " + run.floor_label() + " and cleared %d combats." %
+                run.encounters_cleared, Rect2(345, 459, 916, 57), 23, MUTED, true)
+            _button(canvas, "DefeatReturnButton", "RETURN TO MAIN MENU",
+                Rect2(581, 600, 441, 75), func(): _go("home"), true)
+
+func _resolve_action(choice: String) -> void:
+    host._act1_resolve(choice)
 
 func _draw_lobby() -> void:
     var canvas := _screen_background()
