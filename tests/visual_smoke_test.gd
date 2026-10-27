@@ -83,6 +83,16 @@ func _run() -> void:
     _check(run.floors.size() == 15 and run.available_nodes().size() == 3, "Act 1 has 15 floors and three starting paths")
     _check(run.hero_id == "bryan" and run.current_floor == -1, "chosen hero persists into new run")
     await _capture("06_act1_branching_map")
+    var scroll: ScrollContainer = _find_named(game, "Act1MapScroll") as ScrollContainer
+    _check(scroll != null and scroll.scroll_vertical > 0, "map initially scrolls to starting paths")
+    if scroll != null:
+        var previous_scroll: int = scroll.scroll_vertical
+        scroll.scroll_vertical = 0
+        await _frames(5)
+        _check(scroll.scroll_vertical == 0, "map scrolls up to boss and future floors")
+        await _capture("06_boss_map_top")
+        scroll.scroll_vertical = previous_scroll
+        await _frames(5)
 
     var first_fight: Dictionary = {}
     for node in run.available_nodes():
@@ -144,6 +154,31 @@ func _run() -> void:
     _check(run.current_floor == 0, "map progress persists after battle")
     await _capture("13_map_after_reward")
 
+    # Advance ONE real additional node so that both the chosen connection
+    # and the nodes are visibly highlighted in yellow ink.
+    var second_choices: Array = run.available_nodes()
+    _check(not second_choices.is_empty(), "connected second-floor nodes are available")
+    if not second_choices.is_empty():
+        var second_id: String = str(second_choices[0]["id"])
+        await _click_named("MapNode" + second_id.replace("_", ""))
+        match run.state:
+            "battle":
+                for enemy in combat.enemies:
+                    enemy["hp"] = 0
+                combat.call("_check_outcome")
+                combat.changed.emit()
+                await _frames(3)
+                await _click_named("RewardBlockButton")
+            "event":
+                await _click_named("EventSalvageButton")
+            "shop":
+                await _click_named("ShopLeaveButton")
+            "rest":
+                await _click_named("RestHealButton")
+        _check(str(game.get("screen")) == "act1_map" and run.visited.size() == 2,
+            "second floor completion highlights the selected route")
+        await _capture("13_yellow_route_marker")
+
     # Exercise the three noncombat location screens and their real buttons.
     # Deterministic in-memory setups; map routing itself has separate engine tests.
     run.state = "event"
@@ -197,6 +232,34 @@ func _run() -> void:
     await _capture("16_act1_complete")
     await _click_named("CompleteReturnButton")
     _check(str(game.get("screen")) == "home", "Act 1 completion returns to main menu")
+
+    # Inspect each of the remaining approved combat sprites at full resolution
+    # so a future canvas/scale change can't silently chop another model.
+    for hero_id in ["carlos", "manny", "cristian_hb"]:
+        await _click_named("PlayMainMenuButton")
+        await _click_named("SinglePlayerModeButton")
+        var select_id: String = "SelectHeroCarlos" if hero_id == "carlos" else (
+            "SelectHeroManny" if hero_id == "manny" else "SelectHeroCristianHb")
+        await _click_named(select_id)
+        await _click_named("ContinueSelectionButton")
+        await _click_named("ConfirmHeroButton")
+        var secondary_run: AptitudeAct1Run = game.get("run_state") as AptitudeAct1Run
+        var choice: Dictionary = {}
+        for node in secondary_run.available_nodes():
+            if str(node["kind"]) == "combat":
+                choice = node
+                break
+        _check(not choice.is_empty(), "combat starting path exists for " + hero_id)
+        if not choice.is_empty():
+            await _click_named("MapNode" + str(choice["id"]).replace("_", ""))
+        _check(str(game.get("screen")) == "battle", "solo combat opens for " + hero_id)
+        _check(combat.party.size() == 1 and str(combat.party[0]["id"]) == hero_id,
+            "correct single hero in battle: " + hero_id)
+        await _capture("18_sprite_" + hero_id)
+        secondary_run.state = "inactive"
+        game.set("screen", "home")
+        game.call("_redraw")
+        await _frames(4)
 
     # Multiplayer follows the same character select/bio flow but stays a placeholder.
     await _click_named("PlayMainMenuButton")
