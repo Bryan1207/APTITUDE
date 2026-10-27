@@ -13,6 +13,7 @@ func _initialize() -> void:
     _test_passives()
     _test_character_sprite_safe_frames()
     _test_scaling_and_persistence()
+    _test_full_route_live_encounters()
     if failures == 0:
         print("PASS: Act 1 map, passives and encounter persistence")
     else:
@@ -182,3 +183,135 @@ func _test_scaling_and_persistence() -> void:
     game.start(["bryan", "carlos", "manny", "cristian_hb"])
     _check(int(game.enemies[0]["max_hp"]) == 15 and int(game.enemies[0]["damage"]) == 6,
         "original four-player prototype remains unchanged")
+
+## Exercise an entire seeded Act 1 route with real combat, not mocked wins.
+## Use a deliberately large HP pool to isolate routing/deck/economy regressions
+## from difficulty tuning; the boss is deliberately NOT entered or modified.
+## The standard 60-HP opening-fight test lives in content_expansion_test.gd.
+func _test_full_route_live_encounters() -> void:
+    for owner in ["bryan", "carlos", "manny", "cristian_hb"]:
+        var run: AptitudeAct1Run = RunScript.new()
+        run.start_new(owner, 5000, 64217)
+        var fought: int = 0
+        var earned: int = 0
+        var successful: bool = true
+        for floor_index in range(15):
+            var choices: Array = run.available_nodes()
+            if choices.is_empty():
+                _check(false, owner + " route ran out of connected nodes")
+                successful = false
+                break
+            # Favor battles to exercise different machine groups and later floors.
+            var chosen: Dictionary = choices[0]
+            for option in choices:
+                if str(option["kind"]) == "combat" or str(option["kind"]) == "elite":
+                    chosen = option
+                    break
+            if not run.choose_node(str(chosen["id"])):
+                _check(false, owner + " could not select a reachable node")
+                successful = false
+                break
+            if run.state == "battle":
+                var fight: AptitudeCombatEngine = CombatScript.new()
+                var starting_coins: int = run.coins
+                fight.start([owner], run.encounter_id(), run.combat_options())
+                var hero: Dictionary = fight.hero_by_id(owner)
+                if int(hero["hp"]) != run.hp or fight.coins != starting_coins:
+                    _check(false, owner + " lost HP or coins when entering combat")
+                    successful = false
+                    break
+                var full_deck: Array = []
+                full_deck.append_array(hero["hand"])
+                full_deck.append_array(hero["draw"])
+                if full_deck.size() != run.deck.size():
+                    _check(false, owner + " lost acquired cards between encounters")
+                    successful = false
+                    break
+                var turns: int = 0
+                while fight.phase == "player" and turns < 90:
+                    var actions: int = 0
+                    while fight.phase == "player" and actions < 20:
+                        var index: int = -1
+                        var target: String = owner
+                        # Prioritize persistent powers, then attacks, then skills.
+                        # This is a basic deterministic smoke-test policy, not AI.
+                        for preferred_type in ["power", "attack", "skill"]:
+                            for i in range((hero["hand"] as Array).size()):
+                                var card_id: String = str(hero["hand"][i])
+                                var card: Dictionary = fight.cards[card_id]
+                                if str(card["type"]) != preferred_type or int(card["cost"]) > int(hero["energy"]):
+                                    continue
+                                var card_target: String = fight.card_target_type(card)
+                                if card_target == "enemy":
+                                    for enemy in fight.enemies:
+                                        if int(enemy["hp"]) > 0:
+                                            target = str(enemy["id"])
+                                            break
+                                    if target == owner:
+                                        continue
+                                else:
+                                    target = owner
+                                index = i
+                                break
+                            if index >= 0:
+                                break
+                        if index < 0:
+                            break
+                        var error: String = fight.submit_card(owner, index, target)
+                        if error != "":
+                            _check(false, owner + " rejected legal card: " + error)
+                            successful = false
+                            break
+                        actions += 1
+                    if not successful:
+                        break
+                    if fight.phase == "player":
+                        fight.mark_done(owner)
+                    turns += 1
+                if not successful:
+                    break
+                if fight.phase != "victory":
+                    _check(false, owner + " stalled or lost a long-route fight on floor " + str(floor_index + 1))
+                    successful = false
+                    break
+                fought += 1
+                if not run.finish_battle(int(hero["hp"]), int(hero["max_hp"]), fight.coins, true):
+                    _check(false, owner + " could not persist a completed battle")
+                    successful = false
+                    break
+                if run.hp != int(hero["hp"]) or run.coins != starting_coins + 25:
+                    _check(false, owner + " did not persist real combat HP and coins")
+                    successful = false
+                    break
+                if run.reward_options.size() != 3:
+                    _check(false, owner + " did not offer three hero-specific rewards")
+                    successful = false
+                    break
+                var reward: String = run.reward_options[0]
+                if not run.claim_reward(reward):
+                    _check(false, owner + " could not claim its earned card")
+                    successful = false
+                    break
+                earned += 1
+            else:
+                var choice: String = "salvage" if run.state == "event" else (
+                    "heal" if run.state == "rest" else "leave")
+                if not run.resolve_node(choice):
+                    _check(false, owner + " could not resolve noncombat floor")
+                    successful = false
+                    break
+            if run.state != "map" or run.current_floor != floor_index:
+                _check(false, owner + " did not return to map after floor " + str(floor_index + 1))
+                successful = false
+                break
+        if not successful:
+            continue
+        _check(run.visited.size() == 15 and run.current_floor == 14,
+            owner + " completes 15 connected real encounter floors")
+        _check(run.available_nodes().size() == 1
+            and str(run.available_nodes()[0]["id"]) == "alextron_boss",
+            owner + " reaches the reserved boss without entering it")
+        _check(run.deck.size() == 10 + earned and fought >= 3,
+            owner + " persists all " + str(earned) + " earned cards across " + str(fought) + " real battles")
+        print("LONG ROUTE: %s completed %d battles, HP %d/%d, %d coins, %d cards" %
+            [owner, fought, run.hp, run.max_hp, run.coins, run.deck.size()])
