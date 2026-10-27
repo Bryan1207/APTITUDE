@@ -4,7 +4,7 @@ extends SceneTree
 const RunScript = preload("res://scripts/act1_run.gd")
 const CombatScript = preload("res://scripts/combat_engine.gd")
 const HERO_IDS := ["bryan", "carlos", "manny", "cristian_hb"]
-const SEEDS := [64217, 1729, 531, 2026, 8123, 99173]
+const SEEDS := [64217, 1729, 531, 2026, 8123, 99173, 31415, 27182, 404, 8675309, 12345, 999]
 # The original combat-first baseline is unchanged. Recovery chooses reachable
 # healing routes and the existing repair reward when health is low.
 const POLICIES := ["combat_first", "recovery", "tactical", "tactical_draft"]
@@ -39,7 +39,7 @@ func _initialize() -> void:
                     owner, policy, gates, samples, float(floors_total) / float(samples),
                     float(hp_total) / float(samples), float(wins_total) / float(samples)])
     if failures == 0:
-        print("PASS: six-seed 60-HP combat-first, recovery, tactical and tactical-draft probes are reproducible and preserve run state")
+        print("PASS: twelve-seed 60-HP combat-first, recovery, tactical and tactical-draft probes are reproducible and preserve run state")
     else:
         push_error("FAIL: %d solo difficulty probe assertions" % failures)
     quit(1 if failures > 0 else 0)
