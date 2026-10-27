@@ -281,85 +281,181 @@ func _draw_bio() -> void:
     _button(canvas, "BackFromBioButton", "BACK", Rect2(61, 792, 221, 65), func(): _go("select"))
     _button(canvas, "ConfirmHeroButton", "CONFIRM", Rect2(1298, 792, 245, 65), _confirm_selection, true)
 
+## Map content is 2,080 px tall and scrolls within the 1600x900 HUD.
+## Boss near the top; starting paths near the bottom, like a real run.
+const MAP_CONTENT_HEIGHT := 2110.0
+const MAP_ROW_SPACING := 125.0
+const MAP_FLOOR_ZERO := 1940.0
+
 func _map_center(node: Dictionary) -> Vector2:
     if str(node["kind"]) == "boss":
-        return Vector2(800, 238)
-    return Vector2(499 + 301 * int(node["lane"]), 750 - 33 * int(node["floor"]))
+        return Vector2(503, 111)
+    var lane: float = float(node["lane"])
+    return Vector2(100.0 + lane * 100.0 + float(node.get("jitter", 0.0)),
+        MAP_FLOOR_ZERO - float(node["floor"]) * MAP_ROW_SPACING)
 
-func _map_button(parent: Control, node: Dictionary, available: bool, visited: bool) -> void:
+func _chalk_path(parent: Control, from_point: Vector2, to_point: Vector2, paint: Color, size: float) -> void:
+    var stroke := Line2D.new()
+    stroke.points = PackedVector2Array([from_point, to_point])
+    stroke.width = size
+    stroke.default_color = paint
+    stroke.antialiased = true
+    parent.add_child(stroke)
+
+func _map_node(parent: Control, node: Dictionary, available: bool, was_visited: bool) -> void:
     var point: Vector2 = _map_center(node)
-    var kind: String = str(node["kind"])
     var btn := Button.new()
     btn.name = "MapNode" + str(node["id"]).replace("_", "")
-    btn.position = point - Vector2(77, 14)
-    btn.size = Vector2(154, 28)
-    btn.text = kind.to_upper()
+    btn.position = point - Vector2(34, 34)
+    btn.size = Vector2(68, 68)
     btn.disabled = not available
     btn.focus_mode = Control.FOCUS_ALL if available else Control.FOCUS_NONE
     btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if available else Control.CURSOR_ARROW
-    btn.add_theme_font_size_override("font_size", 13)
-    btn.add_theme_color_override("font_color", Color("ffe9af"))
-    btn.add_theme_color_override("font_disabled_color", Color("b1bfcc") if visited else Color("697a8d"))
-    var box := StyleBoxFlat.new()
-    box.bg_color = Color("554022") if available else (Color("283d40") if visited else Color("172838"))
-    box.border_color = GOLD if available else (Color("6eab98") if visited else Color("485d71"))
-    box.set_border_width_all(2 if available or visited else 1)
-    box.set_corner_radius_all(7)
-    var hover := box.duplicate() as StyleBoxFlat
-    hover.bg_color = Color("826235")
-    hover.border_color = Color("fff1c4")
-    btn.add_theme_stylebox_override("normal", box)
-    btn.add_theme_stylebox_override("disabled", box)
-    btn.add_theme_stylebox_override("hover", hover)
-    btn.add_theme_stylebox_override("pressed", hover)
-    btn.add_theme_stylebox_override("focus", hover)
+    btn.tooltip_text = "%s  •  %s" % [
+        str(node["kind"]).to_upper(),
+        "BOSS" if str(node["kind"]) == "boss" else "FLOOR %d" % (int(node["floor"]) + 1)]
+    # Transparent button on top of a vector chalk circle: no baked-in art
+    # and the click target always matches the visual node's hit area.
+    var empty := StyleBoxEmpty.new()
+    btn.add_theme_stylebox_override("normal", empty)
+    btn.add_theme_stylebox_override("disabled", empty)
+    btn.add_theme_stylebox_override("hover", empty)
+    btn.add_theme_stylebox_override("pressed", empty)
+    btn.add_theme_stylebox_override("focus", empty)
     btn.pressed.connect(_choose_node.bind(str(node["id"])))
     parent.add_child(btn)
+    var symbol: Control = ChalkIcon.new()
+    symbol.kind = str(node["kind"])
+    symbol.active = available
+    symbol.visited = was_visited
+    symbol.size = Vector2(64, 64)
+    symbol.position = Vector2(2, 2)
+    symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    btn.add_child(symbol)
 
 func _choose_node(id: String) -> void:
     host._enter_act1_node(id)
 
+func _legend_entry(parent: Control, kind: String, name: String, y: float) -> void:
+    var icon: Control = ChalkIcon.new()
+    icon.kind = kind
+    icon.size = Vector2(64, 64)
+    icon.position = Vector2(13, y)
+    icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    parent.add_child(icon)
+    _add_label(parent, name, Rect2(90, y + 10, 142, 40), 19, TEXT)
+
 func _draw_act1_map() -> void:
-    var canvas := _screen_background()
+    var canvas: Control = host.ui_root
     var run: AptitudeAct1Run = host.run_state
-    _header(canvas, "ACT 1 — THE CONSTRUCTION ZONE", "15 FLOORS   •   CHOOSE A CONNECTED PATH   •   ALEXTRON AT THE TOP")
-    _panel(canvas, Rect2(309, 214, 987, 567), Color("101f2e"), Color("a48351"))
-    var available: Array = run.available_nodes()
-    var available_ids: Array[String] = []
-    for node in available:
-        available_ids.append(str(node["id"]))
-    # Draw connections beneath all clickable nodes.
+    # Identical header construction, exact heights/positions/buttons/colors
+    # to the existing combat screen (the HUD is owned by main.gd).
+    host._draw_shared_header(true)
+    _add_label(canvas, "ACT 1   /   THE CONSTRUCTION ZONE",
+        Rect2(303, 88, 965, 46), 29, GOLD, true)
+    _add_label(canvas, "CHOOSE A CONNECTED NODE   •   SCROLL TO SURVEY YOUR ROUTE",
+        Rect2(305, 132, 969, 26), 14, MUTED, true)
+
+    # Deliberately clean, dark blueprint-like surface: no background drawings.
+    _panel(canvas, Rect2(12, 156, 261, 580), Color("101923"), Color("465668"))
+    _add_label(canvas, "MAP LEGEND", Rect2(25, 177, 240, 43), 23, TEXT, true)
+    var kinds: Array[String] = ["combat", "elite", "event", "shop", "rest", "boss"]
+    var labels: Array[String] = ["Combat", "Elite", "Event", "Shop", "Rest", "Boss"]
+    for i in range(kinds.size()):
+        _legend_entry(canvas, kinds[i], labels[i], 230.0 + float(i) * 81.0)
+    _button(canvas, "ExitRunButton", "EXIT RUN",
+        Rect2(24, 786, 224, 65), func(): _go("home"))
+
+    var scroll := ScrollContainer.new()
+    scroll.name = "Act1MapScroll"
+    scroll.position = Vector2(296, 169)
+    scroll.size = Vector2(1012, 681)
+    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    scroll.clip_contents = true
+    scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+    canvas.add_child(scroll)
+    var paper := Control.new()
+    paper.name = "BlueprintPaper"
+    paper.custom_minimum_size = Vector2(965, MAP_CONTENT_HEIGHT)
+    paper.size = Vector2(965, MAP_CONTENT_HEIGHT)
+    scroll.add_child(paper)
+    var slate := ColorRect.new()
+    slate.color = Color("0b1622")
+    slate.position = Vector2.ZERO
+    slate.size = paper.size
+    slate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    paper.add_child(slate)
+
+    # Very subtle floor numbers—not a geometric grid and no buildings.
+    for level in range(run.FLOOR_COUNT):
+        var y: float = MAP_FLOOR_ZERO - float(level) * MAP_ROW_SPACING
+        _add_label(paper, "%02d" % (level + 1),
+            Rect2(15, y - 17, 53, 34), 14, Color("7d8c99"))
+    _add_label(paper, "BOSS", Rect2(18, 95, 87, 34), 14, Color("aeb9c4"))
+
+    # First lay every legal connection in faint, hand-drawn white.
     for row in run.floors:
         for node in row:
-            var from: Vector2 = _map_center(node)
-            for target_id in node["next"]:
-                var next_node: Dictionary = run.node_by_id(str(target_id))
+            var first: Vector2 = _map_center(node)
+            for next_id in node["next"]:
+                var next_node: Dictionary = run.node_by_id(str(next_id))
                 if next_node.is_empty():
                     continue
-                var connection := Line2D.new()
-                connection.points = PackedVector2Array([from, _map_center(next_node)])
-                connection.width = 1.5
-                connection.default_color = Color("4b5e6e", 0.70)
-                canvas.add_child(connection)
-    for level in range(run.FLOOR_COUNT):
-        var node_y: float = 750.0 - 33.0 * float(level)
-        _add_label(canvas, "%02d" % (level + 1), Rect2(333, node_y - 12, 50, 24), 15, MUTED)
-        for node in run.floors[level]:
-            var id: String = str(node["id"])
-            _map_button(canvas, node, available_ids.has(id), run.visited.has(id))
-    _map_button(canvas, run.boss, available_ids.has(str(run.boss["id"])), run.visited.has(str(run.boss["id"])))
-    # Run state shown beside the full map, rather than hiding the route.
-    _panel(canvas, Rect2(1315, 244, 263, 456), Color("142636"), Color("65788a"))
-    _add_label(canvas, "YOUR RUN", Rect2(1334, 264, 227, 48), 24, GOLD, true)
-    var hero_def: Dictionary = _hero(run.hero_id)
-    _add_label(canvas, str(hero_def.get("name", run.hero_id)), Rect2(1333, 329, 223, 40), 24, TEXT, true)
-    _add_label(canvas, "HP: %d / %d" % [run.hp, run.max_hp], Rect2(1337, 399, 208, 42), 19, TEXT)
-    _add_label(canvas, "COINS: %d" % run.coins, Rect2(1337, 455, 208, 42), 19, TEXT)
-    _add_label(canvas, "DECK: %d CARDS" % run.deck.size(), Rect2(1337, 511, 213, 42), 19, TEXT)
-    _add_label(canvas, run.floor_label().to_upper(), Rect2(1334, 583, 227, 45), 17, GOLD, true)
-    _add_label(canvas, "MAP SEED: %d" % run.seed, Rect2(1337, 649, 230, 26), 13, MUTED)
-    _add_label(canvas, "GLOWING NODES = AVAILABLE", Rect2(409, 786, 777, 37), 17, GOLD, true)
-    _button(canvas, "ExitRunButton", "EXIT RUN", Rect2(55, 809, 211, 65), func(): _go("home"))
+                var last: Vector2 = _map_center(next_node)
+                _chalk_path(paper, first, last, Color("dce4eb", 0.63), 2.2)
+                _chalk_path(paper, first + Vector2(0.8, 0.1),
+                    last + Vector2(-0.3, 0.6), Color("e2e7e9", 0.16), 1.0)
+
+    # Overlay ONLY the actual visited sequence with broad, translucent
+    # yellow marker strokes—never imply that an unchosen path was taken.
+    for i in range(run.visited.size() - 1):
+        var previous: Dictionary = run.node_by_id(run.visited[i])
+        var following: Dictionary = run.node_by_id(run.visited[i + 1])
+        if previous.is_empty() or following.is_empty():
+            continue
+        _chalk_path(paper, _map_center(previous), _map_center(following),
+            Color("f9e14a", 0.32), 13.0)
+        _chalk_path(paper, _map_center(previous), _map_center(following),
+            Color("ffe875", 0.94), 3.8)
+
+    var reachable: Array[String] = []
+    for node in run.available_nodes():
+        reachable.append(str(node["id"]))
+    for row in run.floors:
+        for node in row:
+            var node_id: String = str(node["id"])
+            _map_node(paper, node, reachable.has(node_id), run.visited.has(node_id))
+    _map_node(paper, run.boss, reachable.has(str(run.boss["id"])),
+        run.visited.has(str(run.boss["id"])))
+
+    # Scrolling begins near the player's path, while allowing inspection
+    # all the way up to the mandatory boss.
+    var y_current: float = MAP_FLOOR_ZERO if run.current_floor < 0 else (
+        111.0 if run.current_floor == run.FLOOR_COUNT
+        else MAP_FLOOR_ZERO - float(run.current_floor) * MAP_ROW_SPACING)
+    var offset: int = clampi(roundi(y_current - 455.0), 0,
+        roundi(MAP_CONTENT_HEIGHT - scroll.size.y))
+    scroll.set_deferred("scroll_vertical", offset)
+
+    _panel(canvas, Rect2(1320, 170, 264, 579), Color("111d29"), Color("465668"))
+    _add_label(canvas, "YOUR RUN", Rect2(1331, 184, 242, 42), 23, TEXT, true)
+    _add_label(canvas, str(_hero(run.hero_id).get("name", run.hero_id)),
+        Rect2(1337, 246, 240, 47), 26, GOLD, true)
+    _add_label(canvas, "HP   %d / %d" % [run.hp, run.max_hp],
+        Rect2(1343, 331, 220, 41), 20, TEXT)
+    _add_label(canvas, "COINS   %d" % run.coins,
+        Rect2(1343, 383, 220, 41), 20, TEXT)
+    _add_label(canvas, "CARDS   %d" % run.deck.size(),
+        Rect2(1343, 436, 220, 41), 20, TEXT)
+    _add_label(canvas, run.floor_label().to_upper(),
+        Rect2(1329, 509, 243, 42), 18, GOLD, true)
+    _add_label(canvas, "YELLOW = YOUR PATH",
+        Rect2(1330, 572, 243, 35), 16, Color("f7df67"), true)
+    _add_label(canvas, "WHITE = OTHER ROUTES",
+        Rect2(1330, 611, 243, 35), 14, MUTED, true)
+    _add_label(canvas, "SEED: %d" % run.seed,
+        Rect2(1336, 698, 225, 29), 14, MUTED)
 
 func _draw_act1_action(destination: String) -> void:
     var canvas := _screen_background()
