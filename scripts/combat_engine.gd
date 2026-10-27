@@ -317,9 +317,16 @@ func enemy_intent_text(enemy: Dictionary) -> String:
 			attack_damage += int(enemy.get("strength", 0))
 			if int(enemy.get("weak", 0)) > 0:
 				attack_damage = maxi(1, roundi(float(attack_damage) * 0.75))
-			# The solo intent must match the actual damage dealt to its only
-			# target. In co-op, each hero may have a different Vulnerable value.
-			if party.size() == 1 and int(party[0].get("vulnerable", 0)) > 0:
+			# When only one hero survives, the intent can display their exact
+			# Vulnerable-adjusted damage even if the run began in co-op.
+			# With multiple survivors, damage may vary by target.
+			var surviving_hero: Dictionary = {}
+			var survivors: int = 0
+			for hero in party:
+				if int(hero.get("hp", 0)) > 0:
+					surviving_hero = hero
+					survivors += 1
+			if survivors == 1 and int(surviving_hero.get("vulnerable", 0)) > 0:
 				attack_damage = maxi(1, roundi(float(attack_damage) * 1.5))
 			var hits: int = maxi(1, int(move.get("hits", 1)))
 			var effect_note: String = ""
