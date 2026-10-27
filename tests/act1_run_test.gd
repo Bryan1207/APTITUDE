@@ -2,6 +2,7 @@ extends SceneTree
 ## Engine-only Milestone 2 regression tests.
 const RunScript = preload("res://scripts/act1_run.gd")
 const CombatScript = preload("res://scripts/combat_engine.gd")
+const CharacterArt = preload("res://scripts/character_art.gd")
 
 var failures: int = 0
 
@@ -10,6 +11,7 @@ func _initialize() -> void:
     _test_topology_across_seeds()
     _test_route_and_rewards()
     _test_passives()
+    _test_character_sprite_safe_frames()
     _test_scaling_and_persistence()
     if failures == 0:
         print("PASS: Act 1 map, passives and encounter persistence")
@@ -136,6 +138,24 @@ func _test_passives() -> void:
     carlos["hand"].insert(0, "attack")
     _check(game.submit_card("carlos", 0, "roboduck_1") == "", "Carlos second Attack accepted")
     _check(int(game.enemies[0]["hp"]) == enemy_hp - 3, "second Attack does not repeat passive")
+
+func _test_character_sprite_safe_frames() -> void:
+    for id in ["bryan", "carlos", "manny", "cristian_hb"]:
+        for filename in ["combat_sprite.png", "selection_portrait.png", "bio_art.png"]:
+            var path: String = "res://art/characters/%s/%s" % [id, filename]
+            var approved: Texture2D = load(path) as Texture2D
+            var padded: Texture2D = CharacterArt.framed_texture(path)
+            _check(approved != null and padded != null,
+                "approved asset and framed asset exist: " + id + "/" + filename)
+            if approved == null or padded == null:
+                continue
+            _check(padded.get_width() > approved.get_width()
+                and padded.get_height() > approved.get_height(),
+                "hero asset has non-destructive safe margins")
+            var image: Image = padded.get_image()
+            _check(image.get_pixel(0, 0).a < 0.01
+                and image.get_pixel(image.get_width() - 1, image.get_height() - 1).a < 0.01,
+                "transparent frame edges prevent image-frame clipping")
 
 func _test_scaling_and_persistence() -> void:
     var game: AptitudeCombatEngine = CombatScript.new()
