@@ -8,6 +8,8 @@ extends RefCounted
 const FLOOR_COUNT := 15
 const LANES := 9
 const HERO_IDS := ["bryan", "carlos", "manny", "cristian_hb"]
+const POOLS_PATH := "res://data/encounter_pools.json"
+const CARDS_PATH := "res://data/cards.json"
 const STARTER_DECK := ["attack", "attack", "attack", "attack", "attack",
     "block", "block", "block", "block", "demon"]
 
@@ -26,6 +28,7 @@ var current_kind: String = ""
 var state: String = "inactive"
 var visited: Array[String] = []
 var encounters_cleared: int = 0
+var reward_options: Array[String] = []
 
 func start_new(chosen_hero: String, starting_max_hp: int = 60, requested_seed: int = -1) -> void:
     if not HERO_IDS.has(chosen_hero):
@@ -42,6 +45,7 @@ func start_new(chosen_hero: String, starting_max_hp: int = 60, requested_seed: i
     state = "map"
     visited.clear()
     encounters_cleared = 0
+    reward_options.clear()
     seed = requested_seed if requested_seed >= 0 else randi_range(1, 2147483647)
     rng.seed = seed
     _generate_map()
@@ -220,14 +224,56 @@ func choose_node(id: String) -> bool:
             return false
     return true
 
+func _read_game_json(path: String) -> Dictionary:
+    if not FileAccess.file_exists(path):
+        return {}
+    var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+    return parsed if parsed is Dictionary else {}
+
 func encounter_id() -> String:
-    match current_kind:
-        "elite":
-            return "city_duo_test"
-        "boss":
-            return "alextron_boss"
-        _:
-            return "city_intro"
+    if current_kind == "boss":
+        return "alextron_boss"
+    # Keep the first duel familiar; progressively introduce the new crews.
+    if current_floor == 0 and current_kind == "combat":
+        return "city_intro"
+    var pool_data: Dictionary = _read_game_json(POOLS_PATH)
+    var key: String = "elite" if current_kind == "elite" else "normal"
+    var choices: Array = pool_data.get(key, [])
+    if choices.is_empty():
+        return "city_duo_test" if current_kind == "elite" else "city_intro"
+    # Index is stable for map seed, current floor and chosen lane.
+    var node: Dictionary = node_by_id(current_node_id)
+    var lane: int = int(node.get("lane", 0))
+    var index: int = (seed + current_floor * 43 + lane * 17) % choices.size()
+    return str(choices[index])
+
+func _roll_card_rewards() -> void:
+    reward_options.clear()
+    var all_cards: Dictionary = _read_game_json(CARDS_PATH)
+    var available: Array[String] = []
+    for raw_id in all_cards:
+        var card: Dictionary = all_cards[raw_id]
+        if str(card.get("hero", "")) == hero_id:
+            available.append(str(raw_id))
+    # Three distinct hero-only reward offers. Common cards are more likely.
+    for _choice in range(mini(3, available.size())):
+        var weights: Array[int] = []
+        var total: int = 0
+        for card_id in available:
+            var item: Dictionary = all_cards[card_id]
+            var rarity: String = str(item.get("rarity", "common"))
+            var weight: int = 6 if rarity == "common" else (3 if rarity == "uncommon" else 1)
+            weights.append(weight)
+            total += weight
+        var roll: int = rng.randi_range(1, total)
+        var selection: int = 0
+        for i in range(available.size()):
+            roll -= weights[i]
+            if roll <= 0:
+                selection = i
+                break
+        reward_options.append(available[selection])
+        available.remove_at(selection)
 
 func combat_options() -> Dictionary:
     return {"hero_hp":hp, "hero_max_hp":max_hp, "coins":coins,
@@ -244,20 +290,22 @@ func finish_battle(result_hp: int, result_max_hp: int, result_coins: int, victor
         return true
     encounters_cleared += 1
     state = "complete" if current_kind == "boss" else "reward"
+    if state == "reward":
+        _roll_card_rewards()
     return true
 
 func claim_reward(reward_id: String) -> bool:
     if state != "reward":
         return false
-    match reward_id:
-        "attack":
-            deck.append("attack")
-        "block":
-            deck.append("block")
-        "repair":
-            hp = mini(max_hp, hp + 8)
-        _:
-            return false
+    if reward_id == "repair":
+        hp = mini(max_hp, hp + 8)
+    elif reward_options.has(reward_id) or reward_id == "attack" or reward_id == "block":
+        # The two basic-card IDs stay valid for saved prototype/test fixtures;
+        # the actual reward UI only offers three unique hero cards.
+        deck.append(reward_id)
+    else:
+        return false
+    reward_options.clear()
     state = "map"
     return true
 
