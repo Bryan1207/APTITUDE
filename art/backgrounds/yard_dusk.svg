@@ -1,7 +1,58 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
 <defs><linearGradient id="night" x2="0" y2="1"><stop stop-color="#101d30"/><stop offset=".55" stop-color="#384255"/><stop offset="1" stop-color="#1b242f"/></linearGradient><linearGradient id="glow" x2="0" y2="1"><stop stop-color="#d98141" stop-opacity=".25"/><stop offset="1" stop-color="#d98141" stop-opacity="0"/></linearGradient></defs>
 <rect width="1600" height="900" fill="url(#night)"/><rect y="330" width="1600" height="500" fill="url(#glow)"/>
+
+<!-- Layered dusk atmosphere and distant processing plant. All geometry is original vector art. -->
+<g fill="none" stroke="#a3aab0" stroke-linecap="round" opacity=".13">
+  <path d="M-20 120C150 75 244 139 405 103S708 116 855 91 1170 106 1350 74 1550 96 1640 65" stroke-width="14"/>
+  <path d="M-40 213C128 169 254 232 408 189S691 202 858 171 1128 196 1292 153 1530 178 1640 136" stroke-width="9"/>
+  <path d="M0 309C150 291 248 310 370 293S620 305 790 277 1070 305 1212 280 1465 297 1600 265" stroke-width="5"/>
+</g>
+<g fill="#c7d5d7" opacity=".22">
+  <circle cx="86" cy="92" r="2"/><circle cx="634" cy="68" r="2"/><circle cx="756" cy="142" r="1.6"/>
+  <circle cx="1040" cy="72" r="2"/><circle cx="1514" cy="98" r="2"/><circle cx="1395" cy="142" r="1.5"/>
+</g>
+<g fill="#17232e" opacity=".78">
+  <path d="M0 529V415h75v-54h33v168h47V447h92v82h52V392h32v137h44V465h72v64h50v-76h72v76h55v-49h93v49h49V404h29v125h62v-70h68v70h72V390h31v139h49v-84h103v84h57v-67h89v67h77V420h36v109h49v-46h94v46h67V409h30v120h54v-58h105v58h67v-95h54v95h43v-42h78v42h42v100H0Z"/>
+  <path d="M277 392h75l-14-25h-47ZM1028 390h70l-16-28h-39ZM1430 420h60l-13-23h-33Z" fill="#26323a"/>
+</g>
+<g stroke="#4c5961" stroke-width="4" fill="none" opacity=".45">
+  <path d="M105 361v-74m-20 0h40m-33 12h26m-26 15h26M314 392v-110m-25 0h50m-25 0v-19M1080 390v-101m-22 0h44m-22 0v-20M1458 420V302m-30 0h60"/>
+  <path d="M39 462h202m-160-30h133m273 24h232m150-31h217m172 21h209"/>
+</g>
+<g fill="#b78d65" opacity=".14">
+  <path d="M45 415h14v23H45Zm37 0h11v23H82Zm107 45h12v19h-12Zm244-26h15v18h-15Zm197 0h15v18h-15Zm299-24h12v23h-12Zm308 31h13v21h-13Zm180-18h12v24h-12Z"/>
+</g>
 <path d="M0 680L95 642L159 671L241 575L330 625L410 523L473 608L558 583L644 634L730 563L850 622L955 555L1061 612L1174 563L1290 627L1414 568L1600 639V900H0Z" fill="#18232c"/>
 <g stroke="#68707d" stroke-width="6" opacity=".48"><path d="M178 672V145L516 145M332 145V617M1117 680V185L1468 185M1270 185V568"/><path d="M178 145l154 225l184-225M1117 185l153 197l198-197"/><path d="M516 145l-13 66m965-26l-15 73"/></g>
 <g fill="#0e1923"><rect x="0" y="706" width="1600" height="194"/><rect x="412" y="591" width="240" height="149"/><rect x="746" y="628" width="186" height="136"/><rect x="1080" y="597" width="295" height="156"/></g>
-<g stroke="#d49164" stroke-width="4" opacity=".35"><path d="M0 757h1600M0 787h1600"/><path d="M90 712v177M309 712v177M560 712v177M780 712v177M1050 712v177M1300 712v177"/></g></svg>
+<g stroke="#d49164" stroke-width="4" opacity=".35"><path d="M0 757h1600M0 787h1600"/><path d="M90 712v177M309 712v177M560 712v177M780 712v177M1050 712v177M1300 712v177"/></g>
+
+<!-- Salvage heaps, bent rebar, storage containers and discarded machinery. -->
+<g fill="#111d27" stroke="#54616a" stroke-width="5" opacity=".74">
+  <path d="M25 658l58-52 65 26 51-59 67 42 60-20 65 66Z"/>
+  <path d="M605 672l56-70 42 26 56-76 50 47 69-28 69 101Z"/>
+  <path d="M1330 658l48-62 47 16 53-66 67 31 55-30v111Z"/>
+</g>
+<g stroke="#8e7e72" stroke-width="6" fill="none" opacity=".5">
+  <path d="M60 634l56-52 51 54m-70-29h92m430 30l76-52 63 46m-85-25h103m614 22l61-50 71 49m-92-25h112"/>
+  <path d="M468 627l24-28 46 20 20-42m-88 48l67-46M971 619l27-27 51 20 32-44"/>
+</g>
+<g fill="#192632" stroke="#61717a" stroke-width="4" opacity=".65">
+  <rect x="54" y="560" width="118" height="54" rx="4"/><rect x="78" y="573" width="71" height="27" fill="#263542"/>
+  <rect x="1421" y="547" width="125" height="67" rx="3"/><path d="M1445 548v66m25-66v66m25-66v66m25-66v66"/>
+  <circle cx="226" cy="626" r="25" fill="#0e1a24"/><circle cx="226" cy="626" r="12" fill="#3b454a"/>
+  <circle cx="266" cy="633" r="25" fill="#0e1a24"/><circle cx="266" cy="633" r="12" fill="#3b454a"/>
+  <circle cx="1515" cy="627" r="23" fill="#0e1a24"/><circle cx="1515" cy="627" r="10" fill="#3b454a"/>
+</g>
+<g stroke="#c69c69" stroke-width="3" fill="none" opacity=".43">
+  <path d="M80 558h68M1433 547h100M674 581l34-31m-13 33l28-30m267 34l28-26"/>
+</g>
+<g fill="#efb36b" opacity=".65">
+  <circle cx="314" cy="279" r="5"/><circle cx="1270" cy="378" r="5"/>
+  <circle cx="969" cy="555" r="2.5"/><circle cx="978" cy="548" r="2"/><circle cx="984" cy="559" r="2"/>
+</g>
+<g stroke="#dba66c" stroke-width="2" opacity=".35">
+  <path d="M969 555l-14-18m14 18l8-20m-8 20l19 7M314 279l-27 27m27-27l28 21M1270 378l-24 25m24-25l28 18"/>
+</g>
+</svg>
