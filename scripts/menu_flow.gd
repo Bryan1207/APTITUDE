@@ -134,14 +134,33 @@ func _texture(parent: Control, path: String, rect: Rect2, cover: bool = false) -
     if not ResourceLoader.exists(path):
         push_warning("Missing menu art: " + path)
         return
-    var image := TextureRect.new()
-    image.texture = load(path) as Texture2D
-    image.position = rect.position
-    image.size = rect.size
-    image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT
-    image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    parent.add_child(image)
+    var texture: Texture2D = load(path) as Texture2D
+    if texture == null:
+        push_warning("Invalid menu texture: " + path)
+        return
+    if cover:
+        # Backdrops intentionally cover the 1600x900 viewport.
+        var image := TextureRect.new()
+        image.texture = texture
+        image.position = rect.position
+        image.size = rect.size
+        image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+        image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+        image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        parent.add_child(image)
+        return
+    # Sprite2D scaling is explicit and always fits, including transparent assets.
+    # TextureRect's expansion/stretch combinations varied across Godot versions.
+    var texture_size: Vector2 = texture.get_size()
+    if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+        return
+    var scale_factor: float = minf(rect.size.x / texture_size.x, rect.size.y / texture_size.y)
+    var sprite := Sprite2D.new()
+    sprite.texture = texture
+    sprite.centered = true
+    sprite.scale = Vector2.ONE * scale_factor
+    sprite.position = rect.position + rect.size * 0.5
+    parent.add_child(sprite)
 
 func _screen_background() -> Control:
     var canvas: Control = host.ui_root
