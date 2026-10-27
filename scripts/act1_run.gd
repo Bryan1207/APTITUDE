@@ -49,11 +49,12 @@ func start_new(chosen_hero: String, starting_max_hp: int = 60, requested_seed: i
 func _node_id(floor_index: int, lane: int) -> String:
     return "%02d_%d" % [floor_index, lane]
 
-func _kind_for(floor_index: int, lane: int) -> String:
+func _kind_for(floor_index: int, opening_slot: int) -> String:
     if floor_index == 0:
-        # Three real choices on floor 1, without forcing one opening fight.
+        # Exactly two combat choices and one optional event, regardless of
+        # the randomly sampled lanes. Rotate their positions with the seed.
         var opening: Array = ["combat", "combat", "event"]
-        return str(opening[(lane + int(seed % 3)) % 3])
+        return str(opening[(opening_slot + int(seed % 3)) % 3])
     var roll: int = rng.randi_range(0, 99)
     if floor_index == FLOOR_COUNT - 1:
         return "rest" if roll < 27 else ("elite" if roll < 52 else "combat")
@@ -129,12 +130,13 @@ func _generate_map() -> void:
         var node_count: int = 3 if level == 0 else rng.randi_range(2, 5)
         var columns: Array[int] = _pick_lanes(node_count)
         for lane in columns:
+            var opening_slot: int = row.size()
             row.append({
                 "id": _node_id(level, lane),
                 "floor": level,
                 "lane": lane,
                 "jitter": rng.randf_range(-11.0, 11.0),
-                "kind": _kind_for(level, lane),
+                "kind": _kind_for(level, opening_slot),
                 "next": []
             })
         floors.append(row)

@@ -62,6 +62,12 @@ func _test_topology_across_seeds() -> void:
         for level in range(15):
             var nodes: Array = run.floors[level]
             variety[nodes.size()] = true
+            if level == 0:
+                var opening_kinds: Array[String] = []
+                for opening_node in nodes:
+                    opening_kinds.append(str(opening_node["kind"]))
+                _check(opening_kinds.count("combat") == 2 and opening_kinds.count("event") == 1,
+                    "opening always includes two combats and an optional event")
             for node in nodes:
                 var links: Array = node["next"]
                 _check(not links.is_empty(), "every node advances toward boss")
