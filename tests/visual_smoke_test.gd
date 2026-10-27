@@ -340,14 +340,19 @@ func _run() -> void:
     else:
         push_error("FAIL: %d graphical smoke assertions" % failures)
 
-    # SceneTree.quit() does not free the dynamically instantiated main scene.
-    # Release its UI nodes, cached textures and resources before shutting down
-    # so graphical QA can detect real leaks rather than its own test fixture.
+    # Give the streaming MP3 playback thread time to relinquish its
+    # AudioStreamPlaybackMP3 before the scene and audio driver are destroyed.
+    # Calling stop() only from _exit_tree() can race with engine shutdown.
+    var background_music: AudioStreamPlayer = game.get_node_or_null("BackgroundMusic") as AudioStreamPlayer
+    if background_music != null:
+        background_music.stop()
+        background_music.stream = null
+    await _frames(10)
     game.queue_free()
-    await _frames(3)
+    await _frames(6)
     game = null
     scene = null
-    await _frames(2)
+    await _frames(4)
     quit(1 if failures > 0 else 0)
 
 func _count_buttons(node: Node) -> int:
