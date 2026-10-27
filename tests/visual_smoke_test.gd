@@ -144,6 +144,38 @@ func _run() -> void:
     _check(run.current_floor == 0, "map progress persists after battle")
     await _capture("13_map_after_reward")
 
+    # Exercise the three noncombat location screens and their real buttons.
+    # Deterministic in-memory setups; map routing itself has separate engine tests.
+    run.state = "event"
+    game.set("screen", "act1_event")
+    game.call("_redraw")
+    await _frames(3)
+    await _capture("14_event")
+    var coins_before_event: int = run.coins
+    await _click_named("EventSalvageButton")
+    _check(str(game.get("screen")) == "act1_map" and run.coins == coins_before_event + 20,
+        "event choice awards coins and returns to map")
+
+    run.state = "shop"
+    game.set("screen", "act1_shop")
+    game.call("_redraw")
+    await _frames(3)
+    await _capture("14_shop")
+    var coins_before_shop: int = run.coins
+    await _click_named("ShopHealButton")
+    _check(str(game.get("screen")) == "act1_map" and run.coins == coins_before_shop - 20,
+        "shop purchase deducts cost and exits to map")
+
+    run.state = "rest"
+    game.set("screen", "act1_rest")
+    game.call("_redraw")
+    await _frames(3)
+    await _capture("14_rest")
+    var max_before_rest: int = run.max_hp
+    await _click_named("RestUpgradeButton")
+    _check(str(game.get("screen")) == "act1_map" and run.max_hp == max_before_rest + 5,
+        "rest-site upgrade raises persistent maximum HP")
+
     # Test-only map fast-forward. Full 15-floor route legality is tested separately
     # in tests/act1_run_test.gd; this verifies boss screen routing and rendering.
     run.current_floor = 14
