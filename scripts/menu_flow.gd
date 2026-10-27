@@ -5,6 +5,10 @@ extends RefCounted
 const BIOS_PATH := "res://data/character_bios.json"
 const CharacterArt = preload("res://scripts/character_art.gd")
 const ChalkIcon = preload("res://scripts/map_chalk_icon.gd")
+const TradingCard = preload("res://scripts/trading_card.gd")
+const HERO_DEFINITIONS = "res://data/heroes.json"
+const ENEMY_DEFINITIONS = "res://data/enemies.json"
+const ABILITY_DEFINITIONS = "res://data/cards.json"
 const STAGE_SIZE := Vector2(1600, 900)
 const HERO_ORDER := ["bryan", "carlos", "manny", "cristian_hb"]
 const GOLD := Color("e9bd71")
@@ -16,6 +20,7 @@ var host
 var mode: String = "single"
 var selected_id: String = ""
 var bios: Dictionary = {}
+var dex_category: String = "heroes"
 
 func _init(main) -> void:
     host = main
@@ -205,6 +210,7 @@ func _hero_portrait(parent: Control, id: String, rect: Rect2, for_bio: bool = fa
 func draw(screen_name: String) -> void:
     match screen_name:
         "home": _draw_home()
+        "character_dex": _draw_character_dex()
         "play": _draw_play()
         "select": _draw_select()
         "bio": _draw_bio()
@@ -218,9 +224,88 @@ func _draw_home() -> void:
     # Original title art has painted buttons; cover their entire right-side strip.
     _panel(canvas, Rect2(1230, 385, 370, 465), Color("0d141e"), GOLD)
     _add_label(canvas, "MAIN MENU", Rect2(1248, 397, 340, 55), 29, GOLD, true)
-    _button(canvas, "PlayMainMenuButton", "PLAY", Rect2(1252, 481, 323, 82), func(): _go("play"), true)
-    _button(canvas, "SettingsMainMenuButton", "SETTINGS", Rect2(1252, 595, 323, 82), _open_settings)
-    _button(canvas, "QuitMainMenuButton", "QUIT", Rect2(1252, 710, 323, 82), func(): host.get_tree().quit())
+    _button(canvas, "PlayMainMenuButton", "PLAY", Rect2(1252, 472, 323, 72), func(): _go("play"), true)
+    _button(canvas, "CharacterDexMenuButton", "CHARACTERDEX", Rect2(1252, 558, 323, 72), func(): _open_dex("heroes"))
+    _button(canvas, "SettingsMainMenuButton", "SETTINGS", Rect2(1252, 644, 323, 72), _open_settings)
+    _button(canvas, "QuitMainMenuButton", "QUIT", Rect2(1252, 730, 323, 72), func(): host.get_tree().quit())
+
+func _load_dex_file(path: String) -> Dictionary:
+    if not FileAccess.file_exists(path):
+        return {}
+    var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+    return parsed if parsed is Dictionary else {}
+
+func _open_dex(category: String) -> void:
+    dex_category = category
+    _go("character_dex")
+
+func _draw_character_dex() -> void:
+    var canvas := _screen_background()
+    _header(canvas, "CHARACTERDEX", "THE CREW  •  ALEXTRON'S MACHINES  •  ABILITIES")
+    _panel(canvas, Rect2(82, 233, 1436, 525), Color("12202e"), Color("8d7857"))
+    _button(canvas, "DexHeroesButton", "HEROES", Rect2(350, 188, 261, 52), _open_dex.bind("heroes"), dex_category == "heroes")
+    _button(canvas, "DexEnemiesButton", "ENEMIES", Rect2(668, 188, 261, 52), _open_dex.bind("enemies"), dex_category == "enemies")
+    _button(canvas, "DexAbilitiesButton", "ABILITY CARDS", Rect2(985, 188, 261, 52), _open_dex.bind("abilities"), dex_category == "abilities")
+    var viewport := ScrollContainer.new()
+    viewport.name = "CharacterDexScroll"
+    viewport.position = Vector2(101, 253)
+    viewport.size = Vector2(1400, 489)
+    viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    viewport.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    canvas.add_child(viewport)
+    var grid := GridContainer.new()
+    grid.name = "CharacterDexGrid"
+    grid.columns = 4
+    grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    grid.add_theme_constant_override("h_separation", 65)
+    grid.add_theme_constant_override("v_separation", 30)
+    viewport.add_child(grid)
+    var entries: Dictionary = {}
+    if dex_category == "heroes":
+        var hero_info: Dictionary = _load_dex_file(HERO_DEFINITIONS)
+        for id in HERO_ORDER:
+            if not hero_info.has(id):
+                continue
+            var stats: Dictionary = hero_info[id]
+            var bio: Dictionary = _hero(id)
+            entries[id] = {
+                "name":bio.get("name", id), "hp":stats.get("max_hp", 60),
+                "accent":stats.get("accent", "#99cde9"),
+                "role":bio.get("role", ""),
+                "passive":bio.get("passive_name", ""),
+                "description":bio.get("bio", ""),
+                "art":"res://art/characters/%s/bio_art.png" % id
+            }
+    elif dex_category == "enemies":
+        var enemies: Dictionary = _load_dex_file(ENEMY_DEFINITIONS)
+        for id in enemies:
+            var enemy: Dictionary = enemies[id]
+            if str(enemy.get("enemy_type", "")) == "boss":
+                continue # Boss art and design are reserved for joint planning.
+            var item: Dictionary = enemy.duplicate(true)
+            item["art"] = str(enemy.get("sprite", ""))
+            entries[id] = item
+    else:
+        var cards: Dictionary = _load_dex_file(ABILITY_DEFINITIONS)
+        for id in cards:
+            var ability: Dictionary = cards[id]
+            if str(ability.get("hero", "")) == "":
+                continue
+            var item: Dictionary = ability.duplicate(true)
+            item["art"] = "res://art/cards/%s.svg" % str(id)
+            entries[id] = item
+    var names: Array = entries.keys()
+    names.sort()
+    # Grouped, scrollable four-column pages; each uses the SAME native
+    # trading card template, never a flattened card image or hard-coded PNG.
+    for id in names:
+        var card: Control = TradingCard.new()
+        card.configure(entries[id], "hero" if dex_category == "heroes" else ("enemy" if dex_category == "enemies" else "ability"))
+        grid.add_child(card)
+    _add_label(canvas, "%d CARDS  •  SCROLL TO BROWSE" % names.size(),
+        Rect2(1114, 766, 400, 37), 16, MUTED, true)
+    _button(canvas, "CharacterDexBackButton", "BACK",
+        Rect2(62, 794, 224, 66), func(): _go("home"))
 
 func _draw_play() -> void:
     var canvas := _screen_background()
