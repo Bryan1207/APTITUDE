@@ -7,11 +7,12 @@ const HERO_IDS := ["bryan", "carlos", "manny", "cristian_hb"]
 const SEEDS := [64217, 1729, 531, 2026, 8123, 99173]
 # The original combat-first baseline is unchanged. Recovery chooses reachable
 # healing routes and the existing repair reward when health is low.
-const POLICIES := ["combat_first", "recovery", "tactical"]
+const POLICIES := ["combat_first", "recovery", "tactical", "tactical_draft"]
 var failures: int = 0
 
 func _initialize() -> void:
     _test_tactical_decisions()
+    _test_draft_decisions()
     for owner in HERO_IDS:
         for policy in POLICIES:
             var gates: int = 0
@@ -38,7 +39,7 @@ func _initialize() -> void:
                     owner, policy, gates, samples, float(floors_total) / float(samples),
                     float(hp_total) / float(samples), float(wins_total) / float(samples)])
     if failures == 0:
-        print("PASS: six-seed 60-HP combat-first, recovery and tactical probes are reproducible and preserve run state")
+        print("PASS: six-seed 60-HP combat-first, recovery, tactical and tactical-draft probes are reproducible and preserve run state")
     else:
         push_error("FAIL: %d solo difficulty probe assertions" % failures)
     quit(1 if failures > 0 else 0)
@@ -100,11 +101,11 @@ func _play_route(owner: String, seed: int, policy: String) -> Dictionary:
                 while fight.phase == "player" and actions < 25:
                     var index: int = -1
                     var target: String = owner
-                    var tactical: Dictionary = _tactical_pick(fight, hero, owner) if policy == "tactical" else {}
+                    var tactical: Dictionary = _tactical_pick(fight, hero, owner) if policy == "tactical" or policy == "tactical_draft" else {}
                     if not tactical.is_empty():
                         index = int(tactical["index"])
                         target = str(tactical["target"])
-                    if policy != "tactical":
+                    if policy != "tactical" and policy != "tactical_draft":
                         for preferred_type in ["power", "attack", "skill"]:
                             for i in range((hero["hand"] as Array).size()):
                                 var card_id: String = str(hero["hand"][i])
@@ -151,7 +152,11 @@ func _play_route(owner: String, seed: int, policy: String) -> Dictionary:
             wins += 1
             if run.state != "reward" or run.reward_options.size() != 3:
                 return _fail(owner + " victory did not offer three card rewards")
-            var reward: String = "repair" if policy != "combat_first" and run.hp <= 38 else str(run.reward_options[0])
+            var reward: String = str(run.reward_options[0])
+            if policy == "tactical_draft":
+                reward = _choose_draft_reward(run, fight.cards)
+            elif policy != "combat_first" and run.hp <= 38:
+                reward = "repair"
             if not run.claim_reward(reward):
                 return _fail(owner + " could not claim a reward")
             if reward != "repair":
@@ -311,3 +316,87 @@ func _test_tactical_decisions() -> void:
     var target: Dictionary = _tactical_pick(fight, hero, "bryan")
     _check(str(target.get("target", "")) == "roboduck_1",
         "tactical policy targets the finishable enemy in a multi-enemy fight")
+
+
+# Draft policy is a test-only decision aid: it never changes actual reward
+# offerings, starter decks or gameplay. Score only currently offered hero cards
+# using their real effect definitions and the cards already in the run deck.
+# A deterministic first-offer tie break avoids hidden randomness in probes.
+func _choose_draft_reward(run: AptitudeAct1Run, card_defs: Dictionary) -> String:
+    if run.hp <= 38 and run.hp < run.max_hp:
+        return "repair"
+    var attack_count: int = 0
+    var skill_count: int = 0
+    var power_count: int = 0
+    for raw_id in run.deck:
+        var card_id: String = str(raw_id)
+        if not card_defs.has(card_id):
+            continue
+        match str((card_defs[card_id] as Dictionary).get("type", "")):
+            "attack": attack_count += 1
+            "skill": skill_count += 1
+            "power": power_count += 1
+    var best_id: String = ""
+    var best_score: float = -100000.0
+    for raw_id in run.reward_options:
+        var card_id: String = str(raw_id)
+        if not card_defs.has(card_id):
+            continue
+        var card: Dictionary = card_defs[card_id]
+        if str(card.get("hero", "")) != run.hero_id:
+            continue
+        var score: float = -2.1 * float(int(card.get("cost", 0)))
+        for raw_effect in card.get("effects", []):
+            var effect: Dictionary = raw_effect
+            var amount: float = float(int(effect.get("value", 0)))
+            match str(effect.get("op", "")):
+                "damage": score += amount * float(maxi(1, int(effect.get("hits", 1)))) * 1.2
+                "block": score += amount * 0.95
+                "draw": score += amount * 2.3
+                "weak": score += amount * 1.8
+                "vulnerable": score += amount * 1.4
+                "strength": score += amount * 6.0
+                "plating": score += amount * 5.5
+                "focus": score += amount * 4.0
+                "heal": score += amount * 1.5
+        match str(card.get("type", "")):
+            "attack":
+                if attack_count <= 6:
+                    score += 2.0
+            "skill":
+                if skill_count <= 5:
+                    score += 2.0
+            "power":
+                if power_count >= 3:
+                    score -= 3.0
+        score -= 3.5 * float(run.deck.count(card_id))
+        if score > best_score:
+            best_score = score
+            best_id = card_id
+    return best_id if best_id != "" else "repair"
+
+func _test_draft_decisions() -> void:
+    var fight: AptitudeCombatEngine = CombatScript.new()
+    var run: AptitudeAct1Run = RunScript.new()
+    run.start_new("bryan", 60, 64217)
+    run.reward_options = ["bryan_conduit_jab", "bryan_lockout"]
+    var original_deck: Array = run.deck.duplicate()
+    var pick: String = _choose_draft_reward(run, fight.cards)
+    _check(pick == "bryan_lockout", "draft policy values draw-plus-block over weak damage")
+    _check(run.deck == original_deck and run.reward_options.size() == 2,
+        "draft evaluation does not mutate the run deck or reward offers")
+    run.reward_options = ["bryan_lockout", "bryan_arc_flash"]
+    for _i in range(4):
+        run.deck.append("bryan_lockout")
+    _check(_choose_draft_reward(run, fight.cards) == "bryan_arc_flash",
+        "draft policy avoids repeatedly stacking the same card")
+    run.reward_options = ["carlos_full_send", "bryan_conduit_jab"]
+    _check(_choose_draft_reward(run, fight.cards) == "bryan_conduit_jab",
+        "draft policy ignores cards belonging to another hero")
+    run.hp = 30
+    _check(_choose_draft_reward(run, fight.cards) == "repair",
+        "draft policy takes guaranteed healing at critical health")
+    run.hp = 60
+    run.reward_options.clear()
+    _check(_choose_draft_reward(run, fight.cards) == "repair",
+        "draft policy safely falls back when no valid reward is offered")
