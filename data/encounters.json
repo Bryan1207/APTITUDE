@@ -28,5 +28,14 @@
       "roboduck",
       "roboduck"
     ]
+  },
+  "alextron_boss": {
+    "id": "alextron_boss",
+    "name": "Alextron's Sentinel — Act 1 Boss (Prototype)",
+    "act": 1,
+    "background": "res://art/backgrounds/alextron_ruins.jpg",
+    "enemies": [
+      "alextron_sentinel"
+    ]
   }
 }
