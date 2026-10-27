@@ -66,6 +66,21 @@ func _initialize() -> void:
 	_check(int(alternate.hero_by_id("cristian_hb")["max_hp"]) == 60, "Cristian & HB share one 60 HP pool")
 	alternate.start(["bryan", "bryan", "cristian_hb"])
 	_check(alternate.party.size() == 2, "duplicate hero IDs cannot create extra players")
+	# A duplicate Done from the same hero must be idempotent while teammates
+	# are still choosing cards. It cannot consume a turn or repeat a log line.
+	var shared: AptitudeCombatEngine = CombatScript.new()
+	shared.start(["bryan", "carlos"])
+	var initial_events: int = shared.events.size()
+	shared.mark_done("bryan")
+	var once_events: int = shared.events.size()
+	_check(once_events == initial_events + 1, "first Done records exactly one action")
+	shared.mark_done("bryan")
+	_check(shared.events.size() == once_events, "duplicate Done adds no second action")
+	_check(shared.round_number == 1 and shared.phase == "player", "duplicate Done cannot end the shared phase")
+	_check(bool(shared.hero_by_id("bryan")["done"]) and not bool(shared.hero_by_id("carlos")["done"]), "only submitting hero is marked Done")
+	shared.mark_done("carlos")
+	_check(shared.round_number == 2 and shared.phase == "player", "second distinct hero advances the shared phase once")
+	_check(not bool(shared.hero_by_id("bryan")["done"]) and not bool(shared.hero_by_id("carlos")["done"]), "new round resets both Done flags")
 	if failures == 0:
 		print("PASS: combat engine smoke checks")
 	else:
