@@ -114,6 +114,8 @@ func _play_route(owner: String, seed: int, policy: String) -> Dictionary:
                                 var card: Dictionary = fight.cards[card_id]
                                 if str(card["type"]) != preferred_type or int(card["cost"]) > int(hero["energy"]):
                                     continue
+                                if str(card["type"]) == "power" and (hero["powers_played"] as Array).has(card_id):
+                                    continue
                                 target = owner
                                 if fight.card_target_type(card) == "enemy":
                                     var found_enemy: bool = false
@@ -222,6 +224,10 @@ func _tactical_pick(fight: AptitudeCombatEngine, hero: Dictionary, owner: String
         var card: Dictionary = fight.cards[card_id]
         if int(card["cost"]) > int(hero["energy"]):
             continue
+        # Drafting may add a second copy of a once-per-combat Power.
+        # A visible card is not necessarily an eligible command.
+        if str(card["type"]) == "power" and (hero["powers_played"] as Array).has(card_id):
+            continue
         var targets: Array[String] = [owner]
         if fight.card_target_type(card) == "enemy":
             targets.clear()
@@ -316,6 +322,12 @@ func _test_tactical_decisions() -> void:
     var target: Dictionary = _tactical_pick(fight, hero, "bryan")
     _check(str(target.get("target", "")) == "roboduck_1",
         "tactical policy targets the finishable enemy in a multi-enemy fight")
+    hero["energy"] = 2
+    hero["hand"] = ["bryan_closed_circuit", "attack"]
+    hero["powers_played"] = ["bryan_closed_circuit"]
+    var once_only: Dictionary = _tactical_pick(fight, hero, "bryan")
+    _check(int(once_only.get("index", -1)) == 1,
+        "tactical policy skips Powers already played during this encounter")
 
 
 # Draft policy is a test-only decision aid: it never changes actual reward
