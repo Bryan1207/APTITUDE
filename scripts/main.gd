@@ -421,15 +421,16 @@ func _draw_enemy_unit(enemy: Dictionary, index: int, enemy_count: int) -> void:
 	var width: float = 190.0 if enemy_count <= 3 else 138.0
 	var region: Panel = _unit_hitbox(Vector2(center_x - width * 0.5, 272), Vector2(width, 334), "enemy:" + str(enemy["id"]))
 	# Enemy attack intent is ABOVE the sprite, never in a card panel.
-	var intent_text: String = "⚔ %d" % int(enemy["damage"]) if alive else ""
+	var intent_text: String = combat.enemy_intent_text(enemy) if alive else ""
 	_label(region, intent_text, Vector2(0, 44), Vector2(width, 34), 24, Color("ff545a")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Roboduck is half-height compared with the 240px humanoid heroes.
-	var displayed_height: float = 122.0 if enemy_count < 4 else 108.0
+	var is_small: bool = str(enemy["type_id"]) == "roboduck" or str(enemy["type_id"]) == "alextron_sentinel"
+	var displayed_height: float = (122.0 if enemy_count < 4 else 108.0) if is_small else (184.0 if enemy_count < 3 else 143.0)
 	_unit_sprite(region, str(enemy_type.get("sprite", "")), Vector2(width * 0.5, 241.0), Vector2(width - 6.0, displayed_height), not alive)
 	var full_name: String = str(enemy_type["name"])
 	if enemy_count > 1:
 		full_name += " #%d" % (index + 1)
-	_label(region, full_name, Vector2(0, 248), Vector2(width, 27), 18, Color("f5f5f7")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_label(region, full_name, Vector2(0, 248), Vector2(width, 27), 15 if full_name.length() > 14 else 18, Color("f5f5f7")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_health_bar(region, Vector2(9, 277), width - 18.0, int(enemy["hp"]), int(enemy["max_hp"]))
 	_label(region, "%d / %d" % [int(enemy["hp"]), int(enemy["max_hp"])], Vector2(0, 289), Vector2(width, 23), 16, Color("fff8f4")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label(region, "◆ %d" % int(enemy["block"]) if alive else "DEFEATED", Vector2(0, 312), Vector2(width, 22), 14, Color("9ed8fa") if alive else Color("f5a2a2")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -558,6 +559,9 @@ func _hud_button(parent: Node, title: String, pos: Vector2, dimensions: Vector2,
 	return b
 
 func _card_art_path(card: Dictionary) -> String:
+	var unique_path: String = "res://art/cards/%s.svg" % str(card["id"])
+	if ResourceLoader.exists(unique_path):
+		return unique_path
 	match str(card["id"]):
 		"attack": return "res://art/ui/attack.png"
 		"block": return "res://art/ui/block.png"
@@ -588,7 +592,9 @@ func _draw_card(parent: Node, card: Dictionary, pos: Vector2, dimensions: Vector
 	top.color = accent.darkened(0.56)
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tile.add_child(top)
-	_label(tile, str(card["name"]), Vector2(39, 7), Vector2(dimensions.x - 47, 28), 17, Color("f8f4e9"))
+	var card_name: String = str(card["name"])
+	_label(tile, card_name, Vector2(39, 7), Vector2(dimensions.x - 47, 28),
+		13 if card_name.length() > 12 else 16, Color("f8f4e9"))
 	var cost: Panel = _panel(tile, Vector2(6, 5), Vector2(29, 29), Color("173e65"))
 	var cost_style: StyleBoxFlat = cost.get_theme_stylebox("panel") as StyleBoxFlat
 	cost_style.border_color = Color("87d9ff")
@@ -596,18 +602,19 @@ func _draw_card(parent: Node, card: Dictionary, pos: Vector2, dimensions: Vector
 	cost_style.set_corner_radius_all(16)
 	cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_label(cost, str(card["cost"]), Vector2(0, 0), Vector2(29, 27), 19, Color("ffffff")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_image(tile, _card_art_path(card), Vector2((dimensions.x - 63) * 0.5, 40), Vector2(63, 63))
-	_label(tile, kind.to_upper(), Vector2(8, 103), Vector2(dimensions.x - 16, 17), 12, accent.lightened(0.43)).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_image(tile, _card_art_path(card), Vector2((dimensions.x - 98) * 0.5, 40), Vector2(98, 75))
+	_label(tile, (kind + " • " + str(card.get("rarity", "starter"))).to_upper(),
+		Vector2(8, 110), Vector2(dimensions.x - 16, 17), 11, accent.lightened(0.43)).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var desc: RichTextLabel = RichTextLabel.new()
 	desc.bbcode_enabled = false
 	desc.text = _card_description(card)
-	desc.position = Vector2(10, 124)
-	desc.size = Vector2(dimensions.x - 20, maxf(0.0, dimensions.y - 130.0))
+	desc.position = Vector2(10, 130)
+	desc.size = Vector2(dimensions.x - 20, maxf(0.0, dimensions.y - 135.0))
 	desc.custom_minimum_size = Vector2.ZERO
 	desc.fit_content = false
 	desc.scroll_active = false
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.add_theme_font_size_override("normal_font_size", 13)
+	desc.add_theme_font_size_override("normal_font_size", 12)
 	desc.add_theme_color_override("default_color", Color("f1eae0"))
 	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desc.clip_contents = true
