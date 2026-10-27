@@ -1,0 +1,47 @@
+{
+  "attack": {
+    "id": "attack",
+    "name": "Attack",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 1,
+    "target": "enemy",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 1
+      }
+    ],
+    "description": "Deal 1 + your Strength damage to one enemy."
+  },
+  "block": {
+    "id": "block",
+    "name": "Block",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 1,
+    "target": "self",
+    "effects": [
+      {
+        "op": "block",
+        "value": 1
+      }
+    ],
+    "description": "Gain 1 Block.\nTarget: yourself."
+  },
+  "demon": {
+    "id": "demon",
+    "name": "Demon",
+    "type": "power",
+    "cost": 1,
+    "card_value": 1,
+    "target": "ally",
+    "effects": [
+      {
+        "op": "strength",
+        "value": 1
+      }
+    ],
+    "description": "Give yourself or one ally +1 Strength for this fight. Exhaust."
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "bryan": {
+    "id": "bryan",
+    "name": "Bryan",
+    "trade": "Industrial Electrician",
+    "accent": "#2B90D9",
+    "specialty": "Shock, conduit strikes, control",
+    "max_hp": 60,
+    "base_energy": 3,
+    "draw_count": 5,
+    "starter_deck": [
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "block",
+      "block",
+      "block",
+      "block",
+      "demon"
+    ],
+    "portrait": "res://art/hero_bryan.png",
+    "sprite": "res://art/heroes/bryan_battlefield.png"
+  },
+  "carlos": {
+    "id": "carlos",
+    "name": "Carlos",
+    "trade": "Roofer",
+    "accent": "#D98329",
+    "specialty": "Heavy hits, block",
+    "max_hp": 60,
+    "base_energy": 3,
+    "draw_count": 5,
+    "starter_deck": [
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "block",
+      "block",
+      "block",
+      "block",
+      "demon"
+    ],
+    "portrait": "res://art/hero_carlos.png",
+    "sprite": "res://art/heroes/carlos_battlefield.png"
+  },
+  "manny": {
+    "id": "manny",
+    "name": "Manny",
+    "trade": "Project Manager / Superintendent",
+    "accent": "#56A766",
+    "specialty": "Team buffs and coordination",
+    "max_hp": 60,
+    "base_energy": 3,
+    "draw_count": 5,
+    "starter_deck": [
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "block",
+      "block",
+      "block",
+      "block",
+      "demon"
+    ],
+    "portrait": "res://art/hero_manny.png",
+    "sprite": "res://art/heroes/manny_battlefield.png"
+  },
+  "cristian_hb": {
+    "id": "cristian_hb",
+    "name": "Cristian & HB",
+    "trade": "Commercial & Residential Electricians",
+    "accent": "#9366D3",
+    "specialty": "Shared scissor-lift unit; ranged and utility (unique skills planned)",
+    "max_hp": 60,
+    "base_energy": 3,
+    "draw_count": 5,
+    "starter_deck": [
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "block",
+      "block",
+      "block",
+      "block",
+      "demon"
+    ],
+    "portrait": "res://art/hero_cristian.png",
+    "sprite": "res://art/heroes/cristian_hb_battlefield.png",
+    "represented_people": 2,
+    "character_slots": 1,
+    "design_note": "One playable slot, shared 60 HP, 3 energy, 10-card testing deck. Concept art showing 70 HP is illustrative only."
+  }
+}

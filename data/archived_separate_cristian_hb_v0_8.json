@@ -1,0 +1,48 @@
+{
+  "cristian": {
+    "id": "cristian",
+    "name": "Cristian",
+    "trade": "Commercial Electrician",
+    "accent": "#9366D3",
+    "specialty": "Electrical combinations",
+    "max_hp": 60,
+    "base_energy": 3,
+    "draw_count": 5,
+    "starter_deck": [
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "block",
+      "block",
+      "block",
+      "block",
+      "demon"
+    ],
+    "portrait": "res://art/hero_cristian.png"
+  },
+  "hb": {
+    "id": "hb",
+    "name": "HB",
+    "trade": "Residential Electrician",
+    "accent": "#E6B847",
+    "specialty": "Utility, healing and card draw",
+    "max_hp": 60,
+    "base_energy": 3,
+    "draw_count": 5,
+    "starter_deck": [
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "attack",
+      "block",
+      "block",
+      "block",
+      "block",
+      "demon"
+    ],
+    "portrait": "res://art/hero_hb.png"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "release": "v0.9.1",
+  "base": "v0.9 Hero Battlefield Preview",
+  "changed_heroes": [
+    "bryan",
+    "carlos"
+  ],
+  "updated_sprite_paths": [
+    "res://art/heroes/bryan_battlefield.png",
+    "res://art/heroes/carlos_battlefield.png"
+  ],
+  "reference_sheet": "res://docs/Bryan_Carlos_Approved_Character_Sheets_v2.png",
+  "unchanged": [
+    "manny",
+    "cristian_hb",
+    "roboduck",
+    "cards",
+    "combat rules",
+    "battlefield layout"
+  ],
+  "limitations": "First-pass PNG extraction. Minor transparent edge artifacts may remain; no Godot runtime was executed in this environment."
+}

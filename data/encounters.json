@@ -1,0 +1,32 @@
+{
+  "city_intro": {
+    "id": "city_intro",
+    "name": "Alextron City - First Contact",
+    "act": 1,
+    "background": "res://art/backgrounds/alextron_ruins.jpg",
+    "enemies": [
+      "roboduck"
+    ]
+  },
+  "city_duo_test": {
+    "id": "city_duo_test",
+    "name": "Alextron City - Two Scouts",
+    "act": 1,
+    "background": "res://art/backgrounds/alextron_ruins.jpg",
+    "enemies": [
+      "roboduck",
+      "roboduck"
+    ]
+  },
+  "city_trio_test": {
+    "id": "city_trio_test",
+    "name": "Alextron City - Three Scouts",
+    "act": 1,
+    "background": "res://art/backgrounds/alextron_ruins.jpg",
+    "enemies": [
+      "roboduck",
+      "roboduck",
+      "roboduck"
+    ]
+  }
+}

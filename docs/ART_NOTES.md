@@ -1,0 +1,1 @@
+These are cropped **reference images** from the approved APTITUDE title screen. They show original back-view silhouettes, not final side-facing combat sprites. Replace art/hero_*.png with original, purpose-built, side-facing static characters later. Title art is reference-only in this build. UI is built with live Godot controls, not baked screenshot buttons.

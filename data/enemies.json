@@ -1,0 +1,13 @@
+{
+  "roboduck": {
+    "id": "roboduck",
+    "name": "Roboduck",
+    "enemy_type": "normal",
+    "hp": 15,
+    "damage": 6,
+    "intent": "attack_all",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/roboduck.png",
+    "description": "An Alextron machine scout. Attacks all living heroes for 6 damage."
+  }
+}
