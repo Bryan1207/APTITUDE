@@ -536,8 +536,8 @@
     "art_key": "highground",
     "member": "Cristian"
   },
-  "cristian_hb_hb_hot_tap": {
-    "id": "cristian_hb_hb_hot_tap",
+  "cristian_hb_hot_tap": {
+    "id": "cristian_hb_hot_tap",
     "hero": "cristian_hb",
     "member": "HB",
     "name": "Hot Tap",
@@ -559,8 +559,8 @@
     "rarity": "common",
     "art_key": "hot_tap"
   },
-  "cristian_hb_hb_impact_driver": {
-    "id": "cristian_hb_hb_impact_driver",
+  "cristian_hb_impact_driver": {
+    "id": "cristian_hb_impact_driver",
     "hero": "cristian_hb",
     "member": "HB",
     "name": "Impact Driver",
@@ -579,8 +579,8 @@
     "rarity": "common",
     "art_key": "impact"
   },
-  "cristian_hb_hb_breaker_trip": {
-    "id": "cristian_hb_hb_breaker_trip",
+  "cristian_hb_breaker_trip": {
+    "id": "cristian_hb_breaker_trip",
     "hero": "cristian_hb",
     "member": "HB",
     "name": "Breaker Trip",
@@ -602,8 +602,8 @@
     "rarity": "uncommon",
     "art_key": "breaker"
   },
-  "cristian_hb_hb_tie_off": {
-    "id": "cristian_hb_hb_tie_off",
+  "cristian_hb_tie_off": {
+    "id": "cristian_hb_tie_off",
     "hero": "cristian_hb",
     "member": "HB",
     "name": "Tie-Off",
@@ -625,8 +625,8 @@
     "rarity": "uncommon",
     "art_key": "harness"
   },
-  "cristian_hb_hb_ground_clamp": {
-    "id": "cristian_hb_hb_ground_clamp",
+  "cristian_hb_ground_clamp": {
+    "id": "cristian_hb_ground_clamp",
     "hero": "cristian_hb",
     "member": "HB",
     "name": "Ground Clamp",
@@ -644,8 +644,8 @@
     "rarity": "common",
     "art_key": "ground"
   },
-  "cristian_hb_hb_power_bank": {
-    "id": "cristian_hb_hb_power_bank",
+  "cristian_hb_power_bank": {
+    "id": "cristian_hb_power_bank",
     "hero": "cristian_hb",
     "member": "HB",
     "name": "Power Bank",
