@@ -69,6 +69,13 @@ jobs:
             Tee-Object -FilePath test-results/act1_run.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Verify hero abilities, machine tactics, art and reward pools
+        shell: pwsh
+        run: |
+          & $env:GODOT_EXE --headless --path . --script res://tests/content_expansion_test.gd 2>&1 |
+            Tee-Object -FilePath test-results/content_expansion.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Launch main scene headlessly for 10 frames
         shell: pwsh
         run: |
