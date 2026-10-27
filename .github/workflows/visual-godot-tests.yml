@@ -61,6 +61,12 @@ jobs:
             timeout 150s aptitude-godot --path . --resolution 1600x900 \
             --rendering-method gl_compatibility --script res://tests/visual_smoke_test.gd \
             2>&1 | tee test-results/visual_smoke.log
+          # Godot's process can exit 0 even when it reports leaked objects.
+          # Fail the QA job if our graphical test stops releasing its scene.
+          if grep -Eq 'ObjectDB instances were leaked|resources still in use at exit' test-results/visual_smoke.log; then
+            echo "::error::Godot reported leaked objects or resources during graphical QA shutdown"
+            exit 1
+          fi
 
       - name: Check approved screenshot baselines
         if: success()
