@@ -5,6 +5,7 @@ extends Control
 const Combat = preload("res://scripts/combat_engine.gd")
 const MenuFlow = preload("res://scripts/menu_flow.gd")
 const Act1Run = preload("res://scripts/act1_run.gd")
+const CharacterArt = preload("res://scripts/character_art.gd")
 const STAGE_W := 1600.0
 const STAGE_H := 900.0
 
@@ -362,7 +363,8 @@ func _unit_hitbox(pos: Vector2, size: Vector2, id: String) -> Panel:
 func _unit_sprite(parent: Node, resource_path: String, center: Vector2, max_size: Vector2, dimmed: bool = false) -> void:
 	if resource_path == "" or not ResourceLoader.exists(resource_path):
 		return
-	var texture: Texture2D = load(resource_path) as Texture2D
+	var hero_art: bool = resource_path.begins_with("res://art/heroes/") or resource_path.begins_with("res://art/characters/")
+	var texture: Texture2D = CharacterArt.framed_texture(resource_path) if hero_art else load(resource_path) as Texture2D
 	if texture == null:
 		return
 	var source_size: Vector2 = texture.get_size()
@@ -373,9 +375,9 @@ func _unit_sprite(parent: Node, resource_path: String, center: Vector2, max_size
 	sprite.texture = texture
 	sprite.centered = true
 	sprite.scale = Vector2(scale_factor, scale_factor)
-	# Centering the scaled sprite against a fixed ground baseline makes
-	# different poses/asset resolutions line up without stretching or cropping.
-	sprite.position = center - Vector2(0.0, source_size.y * scale_factor * 0.5)
+	# Align the CONTENT'S feet (not transparent padding) to the ground line.
+	var safety: float = CharacterArt.margin_for(resource_path) if hero_art else 0.0
+	sprite.position = center - Vector2(0.0, (source_size.y * 0.5 - safety) * scale_factor)
 	if dimmed:
 		sprite.modulate.a = 0.38
 	parent.add_child(sprite)

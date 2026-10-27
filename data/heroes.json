@@ -21,7 +21,7 @@
       "demon"
     ],
     "portrait": "res://art/hero_bryan.png",
-    "sprite": "res://art/heroes/bryan_battlefield.png"
+    "sprite": "res://art/characters/bryan/combat_sprite.png"
   },
   "carlos": {
     "id": "carlos",
@@ -45,7 +45,7 @@
       "demon"
     ],
     "portrait": "res://art/hero_carlos.png",
-    "sprite": "res://art/heroes/carlos_battlefield.png"
+    "sprite": "res://art/characters/carlos/combat_sprite.png"
   },
   "manny": {
     "id": "manny",
@@ -69,7 +69,7 @@
       "demon"
     ],
     "portrait": "res://art/hero_manny.png",
-    "sprite": "res://art/heroes/manny_battlefield.png"
+    "sprite": "res://art/characters/manny/combat_sprite.png"
   },
   "cristian_hb": {
     "id": "cristian_hb",
@@ -93,7 +93,7 @@
       "demon"
     ],
     "portrait": "res://art/hero_cristian.png",
-    "sprite": "res://art/heroes/cristian_hb_battlefield.png",
+    "sprite": "res://art/characters/cristian_hb/combat_sprite.png",
     "represented_people": 2,
     "character_slots": 1,
     "design_note": "One playable slot, shared 60 HP, 3 energy, 10-card testing deck. Concept art showing 70 HP is illustrative only."

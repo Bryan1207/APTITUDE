@@ -3,6 +3,8 @@ extends RefCounted
 ## No changes to the existing combat engine or approved battlefield artwork.
 
 const BIOS_PATH := "res://data/character_bios.json"
+const CharacterArt = preload("res://scripts/character_art.gd")
+const ChalkIcon = preload("res://scripts/map_chalk_icon.gd")
 const STAGE_SIZE := Vector2(1600, 900)
 const HERO_ORDER := ["bryan", "carlos", "manny", "cristian_hb"]
 const GOLD := Color("e9bd71")
@@ -185,7 +187,20 @@ func _hero(id: String) -> Dictionary:
 
 func _hero_portrait(parent: Control, id: String, rect: Rect2, for_bio: bool = false) -> void:
     var file := "bio_art.png" if for_bio else "selection_portrait.png"
-    _texture(parent, "res://art/characters/%s/%s" % [id, file], rect)
+    var asset_path: String = "res://art/characters/%s/%s" % [id, file]
+    var texture: Texture2D = CharacterArt.framed_texture(asset_path)
+    if texture == null:
+        return
+    var raw_size: Vector2 = texture.get_size()
+    if raw_size.x <= 0.0 or raw_size.y <= 0.0:
+        return
+    var fit: float = minf(rect.size.x / raw_size.x, rect.size.y / raw_size.y)
+    var sprite := Sprite2D.new()
+    sprite.texture = texture
+    sprite.centered = true
+    sprite.position = rect.position + rect.size * 0.5
+    sprite.scale = Vector2.ONE * fit
+    parent.add_child(sprite)
 
 func draw(screen_name: String) -> void:
     match screen_name:
