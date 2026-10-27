@@ -4,22 +4,35 @@ extends SceneTree
 const RunScript = preload("res://scripts/act1_run.gd")
 const CombatScript = preload("res://scripts/combat_engine.gd")
 const HERO_IDS := ["bryan", "carlos", "manny", "cristian_hb"]
-const SEEDS := [64217, 1729]
+const SEEDS := [64217, 1729, 531, 2026, 8123, 99173]
+# The original combat-first baseline is unchanged. Recovery chooses reachable
+# healing routes and the existing repair reward when health is low.
+const POLICIES := ["combat_first", "recovery"]
 var failures: int = 0
 
 func _initialize() -> void:
     for owner in HERO_IDS:
-        for seed in SEEDS:
-            var first: Dictionary = _play_route(owner, seed)
-            var replay: Dictionary = _play_route(owner, seed)
-            _check(not first.is_empty(), owner + " seed " + str(seed) + " completed a valid probe")
-            _check(first == replay, owner + " seed " + str(seed) + " is reproducible")
-            if not first.is_empty():
-                print("DIFFICULTY: %s seed=%d outcome=%s floor=%d wins=%d turns=%d hp=%d coins=%d cards=%d" % [
-                    owner, seed, first["outcome"], first["floor"], first["wins"],
-                    first["turns"], first["hp"], first["coins"], first["cards"]])
+        for policy in POLICIES:
+            var gates: int = 0
+            var floors_total: int = 0
+            var samples: int = 0
+            for seed in SEEDS:
+                var first: Dictionary = _play_route(owner, seed, policy)
+                var replay: Dictionary = _play_route(owner, seed, policy)
+                _check(not first.is_empty(), owner + " " + policy + " seed " + str(seed) + " completed a valid probe")
+                _check(first == replay, owner + " " + policy + " seed " + str(seed) + " is reproducible")
+                if not first.is_empty():
+                    gates += 1 if first["outcome"] == "boss_gate" else 0
+                    floors_total += int(first["floor"])
+                    samples += 1
+                    print("DIFFICULTY: %s policy=%s seed=%d outcome=%s floor=%d wins=%d turns=%d hp=%d coins=%d cards=%d" % [
+                        owner, policy, seed, first["outcome"], first["floor"], first["wins"],
+                        first["turns"], first["hp"], first["coins"], first["cards"]])
+            if samples > 0:
+                print("DIFFICULTY_SUMMARY: %s policy=%s boss_gates=%d/%d mean_floor=%.2f" % [
+                    owner, policy, gates, samples, float(floors_total) / float(samples)])
     if failures == 0:
-        print("PASS: normal-60-HP solo difficulty probes are reproducible and preserve run state")
+        print("PASS: six-seed 60-HP combat-first and recovery probes are reproducible and preserve run state")
     else:
         push_error("FAIL: %d solo difficulty probe assertions" % failures)
     quit(1 if failures > 0 else 0)
@@ -35,12 +48,13 @@ func _fail(description: String) -> Dictionary:
     _check(false, description)
     return {}
 
-func _play_route(owner: String, seed: int) -> Dictionary:
+func _play_route(owner: String, seed: int, policy: String) -> Dictionary:
     var run: AptitudeAct1Run = RunScript.new()
     run.start_new(owner, 60, seed)
     if run.hp != 60 or run.deck.size() != 10:
         return _fail(owner + " did not start with 60 HP and the ten-card deck")
     var wins: int = 0
+    var cards_earned: int = 0
     var total_turns: int = 0
     for floor_index in range(15):
         var choices: Array = run.available_nodes()
@@ -52,6 +66,20 @@ func _play_route(owner: String, seed: int) -> Dictionary:
             if str(node["kind"]) == "combat" or str(node["kind"]) == "elite":
                 chosen = node
                 break
+        # Only choose from the currently connected nodes. This policy
+        # deliberately does not look ahead or inspect hidden encounters.
+        if policy == "recovery" and run.hp <= 45:
+            for kind in ["rest", "event", "shop"]:
+                if kind == "shop" and (run.coins < 20 or run.hp > 40):
+                    continue
+                var found: bool = false
+                for node in choices:
+                    if str(node["kind"]) == kind:
+                        chosen = node
+                        found = true
+                        break
+                if found:
+                    break
         if not run.choose_node(str(chosen["id"])):
             return _fail(owner + " could not enter a connected node")
         if run.state == "battle":
@@ -112,13 +140,21 @@ func _play_route(owner: String, seed: int) -> Dictionary:
             wins += 1
             if run.state != "reward" or run.reward_options.size() != 3:
                 return _fail(owner + " victory did not offer three card rewards")
-            if not run.claim_reward(str(run.reward_options[0])):
+            var reward: String = "repair" if policy == "recovery" and run.hp <= 38 else str(run.reward_options[0])
+            if not run.claim_reward(reward):
                 return _fail(owner + " could not claim a reward")
-            if run.deck.size() != 10 + wins:
-                return _fail(owner + " reward deck did not grow after victory")
+            if reward != "repair":
+                cards_earned += 1
+            if run.deck.size() != 10 + cards_earned:
+                return _fail(owner + " reward deck does not match acquired cards")
         else:
             var choice: String = "salvage" if run.state == "event" else (
                 "heal" if run.state == "rest" else "leave")
+            if policy == "recovery":
+                if run.state == "event" and run.hp <= 50:
+                    choice = "repair"
+                elif run.state == "shop" and run.hp <= 40 and run.coins >= 20:
+                    choice = "heal"
             if not run.resolve_node(choice):
                 return _fail(owner + " could not resolve a noncombat floor")
         if run.state != "map" or run.current_floor != floor_index:
