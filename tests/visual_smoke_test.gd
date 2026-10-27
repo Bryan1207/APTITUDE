@@ -71,10 +71,14 @@ func _run() -> void:
     var dex_scroll: ScrollContainer = _find_named(game, "CharacterDexScroll") as ScrollContainer
     _check(dex_scroll != null, "ability gallery remains scrollable")
     if dex_scroll != null:
-        dex_scroll.scroll_vertical = 1850
+        dex_scroll.scroll_vertical = 1640
         await _frames(5)
-        _check(dex_scroll.scroll_vertical > 0, "CharacterDex scrolls to HB ability cards")
-        await _capture("02_character_dex_hb_abilities")
+        _check(dex_scroll.scroll_vertical > 0, "CharacterDex scrolls to first HB ability row")
+        await _capture("02_character_dex_hb_abilities_top")
+        dex_scroll.scroll_vertical = 2050
+        await _frames(5)
+        _check(dex_scroll.scroll_vertical >= 2000, "CharacterDex scrolls to second HB ability row")
+        await _capture("02_character_dex_hb_abilities_bottom")
     await _click_named("CharacterDexBackButton")
     _check(str(game.get("screen")) == "home", "CharacterDex Back returns to main menu")
     await _click_named("PlayMainMenuButton")
