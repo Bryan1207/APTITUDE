@@ -3,10 +3,12 @@ extends Control
 # APTITUDE v0.9.5: native main-menu buttons with visible / clickable bounds identical.
 # Card actions enter the authoritative live FIFO only on a valid drop.
 const Combat = preload("res://scripts/combat_engine.gd")
+const MenuFlow = preload("res://scripts/menu_flow.gd")
 const STAGE_W := 1600.0
 const STAGE_H := 900.0
 
 var combat = Combat.new()
+var menu_flow
 var screen: String = "home"
 var ui_root: Control
 var drag_state: Dictionary = {}
@@ -27,6 +29,7 @@ const CONFIG_PATH := "user://aptitude_settings.cfg"
 const MUSIC_FILE := "res://audio/music-for-study--focus.mp3"
 
 func _ready() -> void:
+	menu_flow = MenuFlow.new(self)
 	_load_preferences()
 	_start_music()
 	combat.changed.connect(_redraw)
@@ -186,10 +189,10 @@ func _redraw() -> void:
 	bg.size = Vector2(STAGE_W, STAGE_H)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_root.add_child(bg)
-	if screen == "home":
-		_draw_home()
-	else:
+	if screen == "battle":
 		_draw_battle()
+	else:
+		menu_flow.draw(screen)
 	if overlay_screen != "":
 		_draw_overlay()
 

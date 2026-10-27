@@ -1,0 +1,50 @@
+{
+  "bryan": {
+    "name": "Bryan",
+    "title": "BRYAN — THE CONDUIT BENDER",
+    "trade": "Industrial Electrician",
+    "role": "Balanced / Control",
+    "starting_hp": 60,
+    "bio": "Armed with his trusty red conduit bender and an unwavering belief that he can fix absolutely anything, Bryan charges into battle against Alextron's mechanical army. His greatest strength is his determination. His greatest weakness? Thinking every problem can be solved by bending it 30 degrees.",
+    "passive_name": "Conduit Discipline",
+    "passive_description": "Start each combat with 1 Block.",
+    "selection_portrait": "res://art/characters/bryan/selection_portrait.png",
+    "bio_art": "res://art/characters/bryan/bio_art.png"
+  },
+  "carlos": {
+    "name": "Carlos",
+    "title": "CARLOS — THE ROOFTOP OUTLAW",
+    "trade": "Roofer",
+    "role": "Aggressive / Damage",
+    "starting_hp": 60,
+    "bio": "A rooftop cowboy with a Milwaukee nail gun and absolutely no regard for OSHA regulations. Carlos doesn't believe in complicated strategies. He believes in hitting things harder, preferably while looking cool doing it. If Alextron's robots have a warranty, he's about to void it.",
+    "passive_name": "Nail Gunner",
+    "passive_description": "The first Attack played each combat deals 1 additional damage.",
+    "selection_portrait": "res://art/characters/carlos/selection_portrait.png",
+    "bio_art": "res://art/characters/carlos/bio_art.png"
+  },
+  "manny": {
+    "name": "Manny",
+    "title": "MANNY — THE SUPERINTENDENT",
+    "trade": "Project Manager / Superintendent",
+    "role": "Support / Strategy",
+    "starting_hp": 60,
+    "bio": "Manny has spent his entire career telling other people what to do, and he's not about to stop because of a robot apocalypse. Armed with a clipboard, a suspiciously long punch list, and the ability to turn any emergency into a mandatory meeting, he keeps the crew organized while everyone else does the dangerous work.",
+    "passive_name": "Toolbox Talk",
+    "passive_description": "Start each combat with 1 additional card in hand.",
+    "selection_portrait": "res://art/characters/manny/selection_portrait.png",
+    "bio_art": "res://art/characters/manny/bio_art.png"
+  },
+  "cristian_hb": {
+    "name": "Cristian & HB",
+    "title": "CRISTIAN & HB — THE LIFT OPERATORS",
+    "trade": "Scissor Lift Operators",
+    "role": "Defense / Teamwork",
+    "starting_hp": 60,
+    "bio": "Two workers. One blue Genie scissor lift. Zero approved battle plans. Cristian handles the controls while HB provides unsolicited tactical advice from the platform. Together, they've discovered that almost any problem can be avoided by simply raising the lift another twenty feet. Unfortunately, neither has figured out how to get down.",
+    "passive_name": "Elevated Position",
+    "passive_description": "Start each combat with 2 Block.",
+    "selection_portrait": "res://art/characters/cristian_hb/selection_portrait.png",
+    "bio_art": "res://art/characters/cristian_hb/bio_art.png"
+  }
+}
