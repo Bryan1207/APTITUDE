@@ -62,6 +62,13 @@ jobs:
             Tee-Object -FilePath test-results/combat_smoke.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Test Act 1 routes, solo combat, scaling and passives
+        shell: pwsh
+        run: |
+          & $env:GODOT_EXE --headless --path . --script res://tests/act1_run_test.gd 2>&1 |
+            Tee-Object -FilePath test-results/act1_run.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Launch main scene headlessly for 10 frames
         shell: pwsh
         run: |
