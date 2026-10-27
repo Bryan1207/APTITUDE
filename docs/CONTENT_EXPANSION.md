@@ -24,7 +24,7 @@ Sources:
 - https://slaythespire.wiki.gg/wiki/Card_Rewards
 - https://www.gamedeveloper.com/design/how-i-slay-the-spire-i-s-devs-use-data-to-balance-their-roguelike-deck-builder
 
-## All 24 unique hero cards
+## All 30 unique hero cards
 
 ### Bryan
 
@@ -69,6 +69,27 @@ Sources:
 | Guardrail | skill | 1 | Gain 5 Block. |
 | Double Check | skill | 0 | Gain 2 Block. Draw 1 card. |
 | High Ground | power | 2 | Gain 2 Plating and 1 Strength. |
+
+### HB's six signature cards (shared Cristian & HB gameplay slot)
+
+Cristian and HB still select **one combined unit**, use one HP pool, and
+retain their approved sprite and passive. The existing six duo abilities
+are tagged **Cristian**; six new HB-signature abilities are now equally
+playable by that same unit and offered in its reward pool. No fifth slot,
+starter-deck change, or new combat mechanic is introduced.
+
+| Card | Type | Energy | Text |
+|---|---|---:|---|
+| Hot Tap | attack | 1 | Deal 3 damage. Apply 1 Vulnerable. |
+| Impact Driver | attack | 1 | Deal 2 damage twice. |
+| Breaker Trip | attack | 2 | Deal 5 damage. Apply 2 Weak. |
+| Tie-Off | skill | 1 | Gain 3 Block. Draw 2 cards. |
+| Ground Clamp | skill | 0 | Gain 3 Block. |
+| Power Bank | power | 2 | Gain 1 Strength and draw +1 each new round. |
+
+Each new ability has its own editable SVG icon and an HB credit in
+CharacterDex. The four playable identities and 5/4/1 starter decks remain
+unchanged.
 
 ## Eight new machine types
 
@@ -135,7 +156,7 @@ Initial selection uses common/uncommon/rare weights of 6:3:1, sampled
 without replacement. Repairing +8 HP remains an alternative. No enemy or
 other hero's card can enter the selected character's reward pool.
 
-`tests/content_expansion_test.gd` verifies all 24 cards can execute, the
+`tests/content_expansion_test.gd` verifies all 30 cards can execute, the
 new SVGs load, the bestiary/encounters are internally consistent, and
 unique-card rewards persist. Graphical QA navigates CharacterDex,
 renders rewards and checks both themed wallpapers.

@@ -15,7 +15,7 @@ func _initialize() -> void:
     _check_encounter_groups()
     _check_reward_pool()
     if failures == 0:
-        print("PASS: 24 hero cards, eight enemies, themed scenes and CharacterDex data")
+        print("PASS: 30 hero cards, eight enemies, themed scenes and CharacterDex data")
     else:
         push_error("FAIL: %d content assertions" % failures)
     quit(1 if failures > 0 else 0)
@@ -33,7 +33,7 @@ func _read(path: String) -> Dictionary:
 
 func _check_card_library() -> void:
     var cards: Dictionary = _read("res://data/cards.json")
-    _check(cards.size() == 27, "27 card definitions including 3 starter cards")
+    _check(cards.size() == 33, "33 card definitions including 3 starter cards")
     for hero in HERO_IDS:
         var own: Array = []
         var counts: Dictionary = {"attack":0, "skill":0, "power":0}
@@ -49,9 +49,22 @@ func _check_card_library() -> void:
                 "usable effect data: " + str(id))
             _check(ResourceLoader.exists("res://art/cards/" + str(id) + ".svg"),
                 "imported original card art exists: " + str(id))
-        _check(own.size() == 6, hero + " has six original abilities")
-        _check(int(counts["attack"]) == 3 and int(counts["skill"]) == 2
-            and int(counts["power"]) == 1, hero + " has 3 attacks, 2 skills, 1 power")
+        var is_duo: bool = hero == "cristian_hb"
+        _check(own.size() == (12 if is_duo else 6),
+            hero + " has the expected signature-card pool")
+        _check(int(counts["attack"]) == (6 if is_duo else 3)
+            and int(counts["skill"]) == (4 if is_duo else 2)
+            and int(counts["power"]) == (2 if is_duo else 1),
+            hero + " has a balanced 3/2/1 card mix per member")
+        if is_duo:
+            var members: Dictionary = {"Cristian":0, "HB":0}
+            for card_id in own:
+                var signature: String = str(cards[card_id].get("member", ""))
+                _check(members.has(signature), "duo ability identifies its creator: " + card_id)
+                if members.has(signature):
+                    members[signature] = int(members[signature]) + 1
+            _check(int(members["Cristian"]) == 6 and int(members["HB"]) == 6,
+                "Cristian and HB each have six distinct playable cards in their shared slot")
 
 func _check_cards_resolve() -> void:
     var game: AptitudeCombatEngine = Combat.new()

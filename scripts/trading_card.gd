@@ -105,7 +105,7 @@ func _build() -> void:
     if category == "hero":
         foot = "HP %d   •   %s" % [int(entry.get("hp", 60)), str(entry.get("passive", "PASSIVE"))]
     elif category == "ability":
-        foot = str(entry.get("rarity", "common")).to_upper() + "   •   " + str(entry.get("hero", "")).to_upper()
+        foot = str(entry.get("rarity", "common")).to_upper() + "   •   " + str(entry.get("member", entry.get("hero", ""))).to_upper()
     else:
         foot = "HP %d    •    ATK %d" % [int(entry.get("hp", 0)), int(entry.get("damage", 0))]
     _text(self, foot, Vector2(14, 347), Vector2(228, 25), 13, hue, true)

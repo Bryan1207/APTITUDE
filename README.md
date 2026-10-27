@@ -5,15 +5,18 @@ characters and deckbuilding combat inspired by the turn-based roguelike genre.
 
 ## NEW: Four unique deckbuilding identities
 
-Version **v0.11.0** adds **24 original character-specific cards** (6 per
-hero: 3 Attacks, 2 Skills, 1 Power), designed for the existing 3-energy
+Version **v0.11.0** adds **30 original character-specific cards** (six each
+for Bryan, Carlos, Manny, Cristian and HB: 3 Attacks, 2 Skills, 1 Power
+per person). Cristian and HB remain **one shared playable unit**, with
+12 available signature abilities, designed for the existing 3-energy
 turn rhythm. Each card has data-driven cost/effects/rarity and its own
 editable SVG illustration in `art/cards/`.
 
 - **Bryan**: conductor attacks, Weak, Vulnerable, protecting and drawing.
 - **Carlos**: multi-hit nailgun offense, cheap moves, persistent Strength.
 - **Manny**: tactical debuffs, team Block, deck velocity and lasting Plating.
-- **Cristian & HB**: lift-based heavy attacks, guardrails and defensive powers.
+- **Cristian & HB**: lift-based heavy attacks, guardrails and defensive powers,
+  plus six HB-signature attacks, harness skills and a draw-focused Power Bank.
 
 Winning combats now offers three weighted, distinct **hero-specific card
 rewards**. You may choose one or repair +8 HP. Those cards persist in the

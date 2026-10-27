@@ -426,7 +426,8 @@
       }
     ],
     "rarity": "common",
-    "art_key": "lift"
+    "art_key": "lift",
+    "member": "Cristian"
   },
   "cristian_hb_spotter_shot": {
     "id": "cristian_hb_spotter_shot",
@@ -448,7 +449,8 @@
       }
     ],
     "rarity": "common",
-    "art_key": "spotter"
+    "art_key": "spotter",
+    "member": "Cristian"
   },
   "cristian_hb_overhead_drop": {
     "id": "cristian_hb_overhead_drop",
@@ -466,7 +468,8 @@
       }
     ],
     "rarity": "uncommon",
-    "art_key": "drop"
+    "art_key": "drop",
+    "member": "Cristian"
   },
   "cristian_hb_guardrail": {
     "id": "cristian_hb_guardrail",
@@ -484,7 +487,8 @@
       }
     ],
     "rarity": "common",
-    "art_key": "guardrail"
+    "art_key": "guardrail",
+    "member": "Cristian"
   },
   "cristian_hb_double_check": {
     "id": "cristian_hb_double_check",
@@ -506,7 +510,8 @@
       }
     ],
     "rarity": "uncommon",
-    "art_key": "check"
+    "art_key": "check",
+    "member": "Cristian"
   },
   "cristian_hb_high_ground": {
     "id": "cristian_hb_high_ground",
@@ -528,6 +533,138 @@
       }
     ],
     "rarity": "rare",
-    "art_key": "highground"
+    "art_key": "highground",
+    "member": "Cristian"
+  },
+  "cristian_hb_hb_hot_tap": {
+    "id": "cristian_hb_hb_hot_tap",
+    "hero": "cristian_hb",
+    "member": "HB",
+    "name": "Hot Tap",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 3,
+    "target": "enemy",
+    "description": "Deal 3 damage. Apply 1 Vulnerable.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 3
+      },
+      {
+        "op": "vulnerable",
+        "value": 1
+      }
+    ],
+    "rarity": "common",
+    "art_key": "hot_tap"
+  },
+  "cristian_hb_hb_impact_driver": {
+    "id": "cristian_hb_hb_impact_driver",
+    "hero": "cristian_hb",
+    "member": "HB",
+    "name": "Impact Driver",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 2,
+    "target": "enemy",
+    "description": "Deal 2 damage twice.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 2,
+        "hits": 2
+      }
+    ],
+    "rarity": "common",
+    "art_key": "impact"
+  },
+  "cristian_hb_hb_breaker_trip": {
+    "id": "cristian_hb_hb_breaker_trip",
+    "hero": "cristian_hb",
+    "member": "HB",
+    "name": "Breaker Trip",
+    "type": "attack",
+    "cost": 2,
+    "card_value": 5,
+    "target": "enemy",
+    "description": "Deal 5 damage. Apply 2 Weak.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 5
+      },
+      {
+        "op": "weak",
+        "value": 2
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "breaker"
+  },
+  "cristian_hb_hb_tie_off": {
+    "id": "cristian_hb_hb_tie_off",
+    "hero": "cristian_hb",
+    "member": "HB",
+    "name": "Tie-Off",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 3,
+    "target": "self",
+    "description": "Gain 3 Block. Draw 2 cards.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 3
+      },
+      {
+        "op": "draw",
+        "value": 2
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "harness"
+  },
+  "cristian_hb_hb_ground_clamp": {
+    "id": "cristian_hb_hb_ground_clamp",
+    "hero": "cristian_hb",
+    "member": "HB",
+    "name": "Ground Clamp",
+    "type": "skill",
+    "cost": 0,
+    "card_value": 3,
+    "target": "self",
+    "description": "Gain 3 Block. Costs 0 Energy.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 3
+      }
+    ],
+    "rarity": "common",
+    "art_key": "ground"
+  },
+  "cristian_hb_hb_power_bank": {
+    "id": "cristian_hb_hb_power_bank",
+    "hero": "cristian_hb",
+    "member": "HB",
+    "name": "Power Bank",
+    "type": "power",
+    "cost": 2,
+    "card_value": 1,
+    "target": "self",
+    "description": "Gain 1 Strength and draw +1 each new round.",
+    "effects": [
+      {
+        "op": "strength",
+        "value": 1
+      },
+      {
+        "op": "focus",
+        "value": 1
+      }
+    ],
+    "rarity": "rare",
+    "art_key": "battery"
   }
 }

@@ -57,7 +57,7 @@ func _run() -> void:
     await _capture("02_character_dex_enemies")
     await _click_named("DexAbilitiesButton")
     gallery = _find_named(game, "CharacterDexGrid")
-    _check(gallery != null and gallery.get_child_count() == 24, "all 24 unique ability cards displayed")
+    _check(gallery != null and gallery.get_child_count() == 30, "all 30 unique ability cards displayed")
     await _capture("02_character_dex_abilities")
     await _click_named("CharacterDexBackButton")
     _check(str(game.get("screen")) == "home", "CharacterDex Back returns to main menu")
