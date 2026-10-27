@@ -339,6 +339,15 @@ func _run() -> void:
         print("PASS: Act 1 menu, solo combat, rewards, boss and multiplayer placeholder screenshots")
     else:
         push_error("FAIL: %d graphical smoke assertions" % failures)
+
+    # SceneTree.quit() does not free the dynamically instantiated main scene.
+    # Release its UI nodes, cached textures and resources before shutting down
+    # so graphical QA can detect real leaks rather than its own test fixture.
+    game.queue_free()
+    await _frames(3)
+    game = null
+    scene = null
+    await _frames(2)
     quit(1 if failures > 0 else 0)
 
 func _count_buttons(node: Node) -> int:
