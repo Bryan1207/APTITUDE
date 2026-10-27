@@ -7,6 +7,7 @@ var failures: int = 0
 
 func _initialize() -> void:
     _test_seeded_map_and_boss()
+    _test_topology_across_seeds()
     _test_route_and_rewards()
     _test_passives()
     _test_scaling_and_persistence()
@@ -34,7 +35,8 @@ func _test_seeded_map_and_boss() -> void:
     var expected: Array = []
     for level in range(15):
         var row: Array = first.floors[level]
-        _check(row.size() == 3, "floor %d contains 3 choices" % (level + 1))
+        _check(row.size() == 3 if level == 0 else (row.size() >= 2 and row.size() <= 5),
+            "floor %d has a valid variable node count" % (level + 1))
         for node in row:
             expected.append("%s:%s:%s" % [node["id"], node["kind"], node["next"]])
             var target_floor: int = level + 1
@@ -46,7 +48,36 @@ func _test_seeded_map_and_boss() -> void:
         for node in row:
             actual.append("%s:%s:%s" % [node["id"], node["kind"], node["next"]])
     _check(expected == actual, "map generation reproduces with same seed")
-    _check(first.available_nodes()[0]["id"] == "00_0", "first starting lane selectable")
+    _check(first.available_nodes()[0]["id"] == first.floors[0][0]["id"],
+        "first starting lane selectable")
+
+func _test_topology_across_seeds() -> void:
+    var variety: Dictionary = {}
+    var tested: int = 0
+    for trial in range(1, 31):
+        var run: AptitudeAct1Run = RunScript.new()
+        run.start_new("manny", 60, trial * 9317)
+        for level in range(15):
+            var nodes: Array = run.floors[level]
+            variety[nodes.size()] = true
+            for node in nodes:
+                var links: Array = node["next"]
+                _check(not links.is_empty(), "every node advances toward boss")
+                for target in links:
+                    _check(run.node_by_id(str(target))["floor"] == level + 1,
+                        "edges do not skip encounter floors")
+        for level in range(1, 15):
+            var previous: Array = run.floors[level - 1]
+            var reached: Dictionary = {}
+            for node in previous:
+                for next_id in node["next"]:
+                    reached[str(next_id)] = true
+            for node in run.floors[level]:
+                _check(reached.has(str(node["id"])),
+                    "each generated node has an incoming connection")
+        tested += 1
+    _check(tested == 30 and variety.size() >= 3,
+        "30 seeds produce connected maps with variable floor densities")
 
 func _test_route_and_rewards() -> void:
     var run: AptitudeAct1Run = RunScript.new()
