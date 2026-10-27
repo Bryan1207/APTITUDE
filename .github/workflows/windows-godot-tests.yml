@@ -1,0 +1,79 @@
+name: APTITUDE Windows Godot Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aptitude-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  godot-windows:
+    name: Godot 4.7.2 / Windows
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out APTITUDE
+        uses: actions/checkout@v4
+
+      - name: Download official Godot 4.7.2 Windows editor
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '4.7.2-stable'
+          $filename = "Godot_v${version}_win64.exe.zip"
+          $url = "https://github.com/godotengine/godot-builds/releases/download/${version}/${filename}"
+          $zip = Join-Path $env:RUNNER_TEMP 'godot-win64.zip'
+          $directory = Join-Path $env:RUNNER_TEMP 'godot-editor'
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $directory -Force
+          $exe = Get-ChildItem -Path $directory -Recurse -File -Filter 'Godot*.exe' | Select-Object -First 1
+          if ($null -eq $exe) { throw 'Godot executable not found in official release archive.' }
+          "GODOT_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          & $exe.FullName --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Import Godot project and check scripts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path test-results -Force | Out-Null
+          & $env:GODOT_EXE --headless --path . --editor --import --quit 2>&1 |
+            Tee-Object -FilePath test-results/import.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test cards, targeting, and shared enemy damage
+        shell: pwsh
+        run: |
+          & $env:GODOT_EXE --headless --path . --script res://tests/simple_cards_test.gd 2>&1 |
+            Tee-Object -FilePath test-results/simple_cards.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Smoke-test the combat engine
+        shell: pwsh
+        run: |
+          & $env:GODOT_EXE --headless --path . --script res://tests/combat_smoke_test.gd 2>&1 |
+            Tee-Object -FilePath test-results/combat_smoke.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Launch main scene headlessly for 10 frames
+        shell: pwsh
+        run: |
+          & $env:GODOT_EXE --headless --path . --quit-after 10 2>&1 |
+            Tee-Object -FilePath test-results/main_scene_startup.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Save test logs (even if a test fails)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aptitude-windows-test-logs
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 14
