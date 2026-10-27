@@ -30,7 +30,7 @@ func _check(condition: bool, title: String) -> void:
 
 func _test_card_data() -> void:
 	var game: AptitudeCombatEngine = CombatScript.new()
-	_check(game.cards.size() == 3, "only three card definitions exist")
+	_check(game.cards.size() == 27, "three basic cards plus 24 distinct hero cards")
 	_check(game.cards.has("attack") and game.cards.has("block") and game.cards.has("demon"), "three named cards")
 	for card_id in ["attack", "block", "demon"]:
 		var card: Dictionary = game.cards[card_id]
