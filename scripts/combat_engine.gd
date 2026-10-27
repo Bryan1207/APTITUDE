@@ -315,6 +315,10 @@ func enemy_intent_text(enemy: Dictionary) -> String:
 			attack_damage += int(enemy.get("strength", 0))
 			if int(enemy.get("weak", 0)) > 0:
 				attack_damage = maxi(1, roundi(float(attack_damage) * 0.75))
+			# The solo intent must match the actual damage dealt to its only
+			# target. In co-op, each hero may have a different Vulnerable value.
+			if party.size() == 1 and int(party[0].get("vulnerable", 0)) > 0:
+				attack_damage = maxi(1, roundi(float(attack_damage) * 1.5))
 			var hits: int = maxi(1, int(move.get("hits", 1)))
 			var effect_note: String = ""
 			if kind == "attack_weak":
@@ -337,6 +341,11 @@ func _enemy_phase() -> void:
 	for enemy in enemies:
 		if int(enemy["hp"]) <= 0:
 			continue
+		# Guard is temporary protection for the following player turn,
+		# not armor that silently accumulates across multiple rounds.
+		# Clear the previous guard BEFORE resolving this enemy's move so
+		# a new Guard action is still available to the next player phase.
+		enemy["block"] = 0
 		var move: Dictionary = enemy.get("next_move", {"kind":"attack"})
 		var kind: String = str(move.get("kind", "attack"))
 		var name: String = str(enemy_defs[str(enemy["type_id"])]["name"])

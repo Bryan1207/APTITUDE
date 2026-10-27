@@ -125,7 +125,11 @@ until the user and designer approve its actual design together.
 - **Target overrides**: an Attack can hit an enemy then draw for its caster
   without applying draw to the machine.
 - **Enemy patterns**: next action is presented above each living enemy, including
-  the number of Weak or Vulnerable stacks it will apply.
+  the number of Weak or Vulnerable stacks it will apply. In solo encounters,
+  attack intent also includes the hero's current Vulnerable damage multiplier.
+- **Enemy guard**: temporary Block protects a machine during the next player
+  turn, then clears before that machine acts again; unused Block never stacks
+  invisibly across later guard cycles.
   Old Roboduck and prototype boss retain their original fixed attack behavior.
 - **Enemy-applied debuffs**: Weak and Vulnerable newly inflicted during an enemy
   phase survive into the next player turn. Only stacks present before that enemy

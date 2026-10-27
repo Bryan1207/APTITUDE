@@ -13,6 +13,7 @@ func _initialize() -> void:
     _test_hb_signature_effects()
     _check_enemy_bestiary()
     _test_enemy_debuff_lifecycle()
+    _test_enemy_guard_lifecycle()
     _check_encounter_groups()
     _check_reward_pool()
     if failures == 0:
@@ -226,12 +227,39 @@ func _test_enemy_debuff_lifecycle() -> void:
     welder.mark_done("bryan") # Round 2: guard.
     _check(int(target["vulnerable"]) == 1,
         "Vulnerable ticks once after the intervening guard turn")
+    _check(welder.enemy_intent_text(welder.enemies[0]).contains("⚔ 6"),
+        "solo intent includes Vulnerable: shows 6 damage, not misleading base 4")
     var before_hero_hp: int = int(target["hp"])
     welder.mark_done("bryan") # Round 3: 4 base damage -> 6 with Vulnerable.
     _check(int(target["hp"]) == before_hero_hp - 6,
         "Welder's follow-up attack benefits from Vulnerable")
     _check(int(target["vulnerable"]) == 0,
         "Vulnerable expires after the damaging follow-up")
+
+func _test_enemy_guard_lifecycle() -> void:
+    # Tesla Brute's round-2 guard must absorb hits in round 3, then expire
+    # before its next move. Otherwise guard silently stacks forever.
+    var game: AptitudeCombatEngine = Combat.new()
+    game.start(["bryan"], "teslabot_brute_bay", {"scale_for_party":true})
+    var brute: Dictionary = game.enemies[0]
+    var hero: Dictionary = game.hero_by_id("bryan")
+    game.mark_done("bryan") # Round 1: attack.
+    game.mark_done("bryan") # Round 2: guard.
+    _check(int(brute["block"]) == 5,
+        "Tesla Brute guard provides five Block for the next player turn")
+    var initial_hp: int = int(brute["hp"])
+    hero["hand"].insert(0, "attack")
+    _check(game.submit_card("bryan", 0, "teslabot_brute_1") == "",
+        "starter attack can strike a guarded enemy")
+    _check(int(brute["block"]) == 4 and int(brute["hp"]) == initial_hp,
+        "guard absorbs damage without reducing machine HP")
+    game.mark_done("bryan") # Round 3: attack, prior guard expires.
+    _check(int(brute["block"]) == 0,
+        "unused guard does not persist through the next enemy phase")
+    game.mark_done("bryan") # Round 4: attack.
+    game.mark_done("bryan") # Round 5: guard again.
+    _check(int(brute["block"]) == 5,
+        "later guard starts fresh rather than accumulating old armor")
 
 func _check_encounter_groups() -> void:
     var data: Dictionary = _read("res://data/encounters.json")
