@@ -25,15 +25,22 @@ added when a stable desktop runner is available.
 sends real mouse events to native Godot controls (not fake button callbacks),
 and saves images in `test-results/screenshots/`:
 
-1. `01_main_menu.png` — initial title screen
-2. `02_menu_settings.png` — clicking Settings
-3. `03_multiplayer_notice.png` — clicking Multiplayer
-4. `04_combat.png` — clicking Single Player; all four heroes
-5. `05_deck_inventory.png` — opening the Deck overlay
-6. `06_combat_settings.png` — opening Settings during battle
-7. `07_drag_targeting.png` — dragging a deterministic Attack over Roboduck
-8. `08_after_card_play.png` — completing a drop and checking enemy damage
-9. `09_victory.png` — showing the battle victory state
+1. `01_main_menu.png` — title screen, Play / Settings / Quit
+2. `02_main_settings.png` — settings opened from the title screen
+3. `03_play_modes.png` — Single Player / Multiplayer, no Custom mode
+4. `04_character_selection.png` — four approved hero models
+5. `05_bio_bryan.png` — Bryan biography and passive
+6. `05_bio_carlos.png` — Carlos biography and passive
+7. `05_bio_manny.png` — Manny biography and passive
+8. `05_bio_cristian_hb.png` — Cristian & HB biography and passive
+9. `06_act1_map.png` — Single Player destination placeholder
+10. `07_multiplayer_lobby.png` — Multiplayer destination placeholder
+11. `08_combat_preview.png` — original four-hero sandbox preserved
+12. `09_deck_inventory.png` — Deck overlay
+13. `10_combat_settings.png` — Settings during combat
+14. `11_drag_targeting.png` — mouse-dragged Attack over Roboduck
+15. `12_after_card_play.png` — attack damages Roboduck
+16. `13_victory.png` — victory state
 
 Test-only fixtures ensure the Attack is in the hand and end the encounter;
 they modify **only the in-memory test process**, not the game project or

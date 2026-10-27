@@ -1,28 +1,73 @@
-# APTITUDE: Rise of Alextron - v0.9.5 Native Main Menu Buttons
+# APTITUDE: Rise of Alextron — v0.9.6 Menu Flow
 
-This is a GODOT GAME PROJECT, not a screenshot or standalone image.
+Godot 4.7.2 Windows cooperative deckbuilder prototype. The current milestone
+implements **the navigable menu and character-selection experience**, while
+preserving the previous playable four-hero combat prototype.
 
-## Change from v0.9.4
+## Navigation
 
-- Removed the invisible clickable rectangles that tried to track the painted menu buttons.
-- Placed ONE opaque styled right-hand menu panel over the original printed buttons in the background artwork. No duplicate visible button artwork is left in the game; the rest of the approved splash art is unchanged.
-- Added exactly FOUR native Godot Button controls, styled dark metal / gold, with decorative icons extracted from the approved main-menu art:
-  * SINGLE PLAYER => opens four-hero battle.
-  * MULTIPLAYER => opens the existing Coming Soon modal.
-  * SETTINGS => opens existing music volume / mute / fullscreen modal.
-  * QUIT => exits game.
-- Mouse, keyboard focus, and visual hover outline all belong to the same Button Control. Click regions exactly match the visible button bounds.
-- All controls are within the 1600 x 900 stage. Godot canvas_items stretch keeps input and visuals matched if window resolution changes.
-- Existing looping music, cards, deck overlays, game rules, enemy HP, and four approved hero models are unchanged.
+```
+MAIN MENU
+├── PLAY
+│   ├── SINGLE PLAYER
+│   │   └── CHARACTER SELECT (Bryan, Carlos, Manny, Cristian & HB)
+│   │       └── CHARACTER BIO (Back / Confirm only)
+│   │           └── ACT 1 — THE CONSTRUCTION ZONE (placeholder)
+│   │               └── COMBAT PREVIEW (previous four-hero prototype)
+│   └── MULTIPLAYER
+│       └── CHARACTER SELECT
+│           └── CHARACTER BIO (Back / Confirm only)
+│               └── MULTIPLAYER LOBBY (placeholder, no networking yet)
+├── SETTINGS (music, mute, fullscreen)
+└── QUIT
+```
 
-## Install and test
+**No Custom mode.** Single Player, Multiplayer and the character bio routes
+use actual Godot buttons, not baked-in image click areas.
+Character selection requires a hero before Continue is enabled.
+Back returns to the previous screen and preserves the hero selection where useful.
 
-1. Extract ZIP into a NEW folder; in Godot 4.7 import project.godot.
-2. Press F5 to reach menu and confirm no underlying second set of buttons is visible.
-3. Hover all 4 visible buttons; the hover border should match the button itself.
-4. Check Multiplayer, Settings, Single Player, and Quit. Music should keep playing across the first three.
-5. Test at 1600 x 900 and fullscreen.
+## Approved character writing
 
-## Status
+All four biographies, roles and passive descriptions are in
+`data/character_bios.json`. Starting HP is currently 60 for each character.
 
-ZIP/package and placement were checked. Godot was not installed in the build environment, so final in-engine verification is required.
+| Hero | Combat role | Approved passive |
+| --- | --- | --- |
+| Bryan — The Conduit Bender | Balanced / Control | Conduit Discipline: Start combat with 1 Block |
+| Carlos — The Rooftop Outlaw | Aggressive / Damage | Nail Gunner: First Attack each combat deals +1 damage |
+| Manny — The Superintendent | Support / Strategy | Toolbox Talk: Draw 1 additional card at combat start |
+| Cristian & HB — The Lift Operators | Defense / Teamwork | Elevated Position: Start combat with 2 Block |
+
+**Milestone boundary:** Passives are displayed but *not yet activated* in the
+combat engine. The Act 1 branching map currently displays a preview layout,
+not fully generated encounter navigation. Selected-hero-only combat, passives,
+branching map/encounters, and multiplayer networking are future gameplay work.
+The **COMBAT PREVIEW** button deliberately opens the former four-hero sandbox
+so existing combat controls and regression tests remain accessible.
+
+## Artwork source and reuse
+
+`art/characters/<hero>/` stores:
+- `approved_reference.png`: approved character appearance (Bryan and Carlos v2)
+- `selection_portrait.png`: matching transparent hero art for selection
+- `bio_art.png`: matching transparent full hero art for biography
+- `combat_sprite.png`: approved combat art
+
+At this milestone the three transparent poses start from the existing approved
+battlefield sprite, so appearances remain consistent. Originals under
+`art/heroes/` are unchanged; background scenery and interactive GUI controls
+are kept separate from the character images.
+
+## Testing and reviewing builds
+
+The repository has two GitHub Actions workflows:
+
+- **APTITUDE Windows Godot Tests**: headless Windows import/startup and engine tests
+- **APTITUDE Graphical QA**: 1600×900 virtual display, synthetic menu/input
+  navigation, and 16 screenshots, including every character bio and combat
+
+Open Actions → the latest Graphical QA run → Artifacts → `aptitude-graphical-qa`.
+For screenshots/baseline policy see `docs/GRAPHICAL_QA.md`.
+
+Open `project.godot` in Godot 4.7.2 and press F5 to run locally.

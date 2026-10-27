@@ -170,7 +170,7 @@ func _screen_background() -> Control:
     shade.size = STAGE_SIZE
     shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
     canvas.add_child(shade)
-    _texture(canvas, "res://art/ui/aptitude_logo.png", Rect2(49, 26, 292, 80))
+    _texture(canvas, "res://art/ui/aptitude_logo.png", Rect2(52, 17, 430, 100))
     return canvas
 
 func _header(parent: Control, headline: String, subtitle: String) -> void:
