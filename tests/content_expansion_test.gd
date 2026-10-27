@@ -16,6 +16,7 @@ func _initialize() -> void:
     _test_enemy_guard_lifecycle()
     _check_encounter_groups()
     _check_reward_pool()
+    _test_reward_carries_into_next_fight()
     if failures == 0:
         print("PASS: 30 hero cards, eight enemies, themed scenes and CharacterDex data")
     else:
@@ -308,3 +309,112 @@ func _check_reward_pool() -> void:
         var chosen_id: String = pool[0]
         _check(game.claim_reward(chosen_id) and game.deck.has(chosen_id),
             owner + " can permanently acquire a new unique card")
+
+## Full solo combat -> real reward -> next map encounter for every playable slot.
+## This guards against signature rewards appearing in the UI but disappearing
+## from the persistent deck or being rejected when the next fight starts.
+func _test_reward_carries_into_next_fight() -> void:
+    for owner in HERO_IDS:
+        var run: AptitudeAct1Run = ActRun.new()
+        run.start_new(owner, 60, 77421)
+        var first_node: Dictionary = {}
+        for node in run.available_nodes():
+            if str(node["kind"]) == "combat":
+                first_node = node
+                break
+        _check(not first_node.is_empty(), owner + " has a playable opening combat")
+        if first_node.is_empty():
+            continue
+        _check(run.choose_node(str(first_node["id"])), owner + " enters opening combat")
+
+        var fight: AptitudeCombatEngine = Combat.new()
+        fight.start([owner], run.encounter_id(), run.combat_options())
+        _check(fight.party.size() == 1 and fight.enemies.size() == 1,
+            owner + " starts a solo scaled Roboduck encounter")
+        var rounds: int = 0
+        while fight.phase == "player" and rounds < 25:
+            var hero: Dictionary = fight.hero_by_id(owner)
+            var played: int = 0
+            while fight.phase == "player" and played < 12:
+                var hand: Array = hero["hand"]
+                var chosen_index: int = -1
+                var chosen_target: String = owner
+                for i in range(hand.size()):
+                    var card: Dictionary = fight.cards[str(hand[i])]
+                    if int(card["cost"]) > int(hero["energy"]):
+                        continue
+                    if fight.card_target_type(card) == "enemy":
+                        chosen_target = str(fight.enemies[0]["id"])
+                    else:
+                        chosen_target = owner
+                    chosen_index = i
+                    break
+                if chosen_index < 0:
+                    break
+                var error: String = fight.submit_card(owner, chosen_index, chosen_target)
+                _check(error == "", owner + " plays a legal starter card in solo combat")
+                if error != "":
+                    break
+                played += 1
+            if fight.phase == "player":
+                fight.mark_done(owner)
+            rounds += 1
+        _check(fight.phase == "victory" and rounds < 25,
+            owner + " can win an actual solo opening fight with starter deck")
+        if fight.phase != "victory":
+            continue
+
+        var survivor: Dictionary = fight.hero_by_id(owner)
+        _check(run.finish_battle(int(survivor["hp"]), int(survivor["max_hp"]),
+            fight.coins, true), owner + " persists the real combat outcome")
+        _check(run.state == "reward" and run.reward_options.size() == 3,
+            owner + " receives three unique reward choices after victory")
+        if run.reward_options.is_empty():
+            continue
+        var selected_card: String = run.reward_options[0]
+        _check(run.claim_reward(selected_card), owner + " claims a signature card")
+        _check(run.deck.size() == 11 and run.deck.count(selected_card) == 1,
+            owner + " retains the 10-card starter plus one earned card")
+
+        var next_encounter: String = ""
+        for _step in range(15):
+            var choices: Array = run.available_nodes()
+            if choices.is_empty():
+                break
+            var next_node: Dictionary = choices[0]
+            _check(run.choose_node(str(next_node["id"])),
+                owner + " advances along a connected map route")
+            if run.state == "battle":
+                next_encounter = run.encounter_id()
+                break
+            var resolution: String = "leave" if run.state == "shop" else (
+                "salvage" if run.state == "event" else "heal")
+            _check(run.resolve_node(resolution),
+                owner + " resolves noncombat stop on route to next fight")
+        _check(next_encounter != "", owner + " reaches another real encounter")
+        if next_encounter == "":
+            continue
+
+        var next_fight: AptitudeCombatEngine = Combat.new()
+        next_fight.start([owner], next_encounter, run.combat_options())
+        var next_hero: Dictionary = next_fight.hero_by_id(owner)
+        var available_cards: Array = []
+        available_cards.append_array(next_hero["hand"])
+        available_cards.append_array(next_hero["draw"])
+        _check(available_cards.count(selected_card) == 1,
+            owner + " earned signature card enters the next shuffled combat deck")
+        if not available_cards.has(selected_card):
+            continue
+        if not (next_hero["hand"] as Array).has(selected_card):
+            (next_hero["draw"] as Array).erase(selected_card)
+            (next_hero["hand"] as Array).append(selected_card)
+        var card: Dictionary = next_fight.cards[selected_card]
+        var target: String = owner
+        if next_fight.card_target_type(card) == "enemy":
+            target = str(next_fight.enemies[0]["id"])
+        var prior_sequence: int = next_fight.next_sequence
+        _check(next_fight.submit_card(owner,
+            (next_hero["hand"] as Array).find(selected_card), target) == "",
+            owner + " can play the earned card in the next encounter")
+        _check(next_fight.next_sequence == prior_sequence + 1,
+            owner + " earned card resolves once through the global FIFO queue")
