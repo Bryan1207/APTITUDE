@@ -1,7 +1,7 @@
 # APTITUDE graphical QA (Godot 4.7.2)
 
-This system adds **rendered screenshots and real GUI event smoke testing** without
-changing gameplay rules or art. It supplements (does not replace) the existing
+This system provides **rendered screenshots and real GUI event smoke testing** for
+Milestone 2, including the gameplay-state changes. It supplements (does not replace) the existing
 `APTITUDE Windows Godot Tests` workflow.
 
 ## Two independent checks
@@ -25,26 +25,34 @@ added when a stable desktop runner is available.
 sends real mouse events to native Godot controls (not fake button callbacks),
 and saves images in `test-results/screenshots/`:
 
-1. `01_main_menu.png` — title screen, Play / Settings / Quit
-2. `02_main_settings.png` — settings opened from the title screen
-3. `03_play_modes.png` — Single Player / Multiplayer, no Custom mode
-4. `04_character_selection.png` — four approved hero models
-5. `05_bio_bryan.png` — Bryan biography and passive
-6. `05_bio_carlos.png` — Carlos biography and passive
-7. `05_bio_manny.png` — Manny biography and passive
-8. `05_bio_cristian_hb.png` — Cristian & HB biography and passive
-9. `06_act1_map.png` — Single Player destination placeholder
-10. `07_multiplayer_lobby.png` — Multiplayer destination placeholder
-11. `08_combat_preview.png` — original four-hero sandbox preserved
-12. `09_deck_inventory.png` — Deck overlay
-13. `10_combat_settings.png` — Settings during combat
-14. `11_drag_targeting.png` — mouse-dragged Attack over Roboduck
-15. `12_after_card_play.png` — attack damages Roboduck
-16. `13_victory.png` — victory state
+1. `01_main_menu.png` — initial title screen
+2. `02_main_settings.png` — title-screen settings
+3. `03_play_modes.png` — Single Player / Multiplayer mode choices
+4. `04_character_selection.png` — all four approved characters
+5. `05_bio_bryan.png` — Bryan's biography and passive
+6. `05_bio_carlos.png` — Carlos's biography and passive
+7. `05_bio_manny.png` — Manny's biography and passive
+8. `05_bio_cristian_hb.png` — Cristian & HB's biography and passive
+9. `06_act1_branching_map.png` — three available starting paths
+10. `07_solo_combat.png` — single hero with scaled enemy
+11. `08_deck_inventory.png` — current hero deck
+12. `09_combat_settings.png` — combat settings overlay
+13. `10_drag_targeting.png` — simulated card drag
+14. `11_after_card_play.png` — verified card damage
+15. `12_victory_reward.png` — choose a reward
+16. `13_map_after_reward.png` — deck and coin persistence
+17. `14_event.png` — event choices
+18. `14_shop.png` — shop choices
+19. `14_rest.png` — rest choices
+20. `14_boss_unlocked.png` — boss-only final route
+21. `15_boss_combat.png` — boss encounter
+22. `16_act1_complete.png` — Act 1 complete
+23. `17_multiplayer_lobby.png` — multiplayer placeholder
 
-Test-only fixtures ensure the Attack is in the hand and end the encounter;
+Test-only fixtures force a known Attack, accelerated encounter wins and a boss-map jump;
 they modify **only the in-memory test process**, not the game project or
-approved assets. Interaction or rendering assertions cause the job to fail.
+approved assets. Full 15-floor route legality is verified separately in
+`tests/act1_run_test.gd`. Interaction or rendering assertions cause the job to fail.
 Logs and any available screenshots are uploaded **even on failure**.
 
 ## Review screenshots

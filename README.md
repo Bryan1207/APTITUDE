@@ -1,73 +1,76 @@
-# APTITUDE: Rise of Alextron — v0.9.6 Menu Flow
+# APTITUDE: Rise of Alextron — v0.10.0 (Milestone 2)
 
-Godot 4.7.2 Windows cooperative deckbuilder prototype. The current milestone
-implements **the navigable menu and character-selection experience**, while
-preserving the previous playable four-hero combat prototype.
+**Godot 4.7.2** native Windows game prototype, built around four approved
+characters and deckbuilding combat inspired by the turn-based roguelike genre.
 
-## Navigation
+## Play flow
 
-```
-MAIN MENU
-├── PLAY
-│   ├── SINGLE PLAYER
-│   │   └── CHARACTER SELECT (Bryan, Carlos, Manny, Cristian & HB)
-│   │       └── CHARACTER BIO (Back / Confirm only)
-│   │           └── ACT 1 — THE CONSTRUCTION ZONE (placeholder)
-│   │               └── COMBAT PREVIEW (previous four-hero prototype)
-│   └── MULTIPLAYER
-│       └── CHARACTER SELECT
-│           └── CHARACTER BIO (Back / Confirm only)
-│               └── MULTIPLAYER LOBBY (placeholder, no networking yet)
-├── SETTINGS (music, mute, fullscreen)
-└── QUIT
-```
+Main Menu → Play → Single Player → choose one hero → Character Bio → Confirm →
+**Act 1: The Construction Zone**.
 
-**No Custom mode.** Single Player, Multiplayer and the character bio routes
-use actual Godot buttons, not baked-in image click areas.
-Character selection requires a hero before Continue is enabled.
-Back returns to the previous screen and preserves the hero selection where useful.
+- **15 encounter floors** with three visible nodes on each floor and connected
+  paths generated from a displayed random seed.
+- Three paths are available from the first floor; players choose one reachable
+  node per floor with **no backtracking**.
+- **Mandatory floor-16 boss**: Alextron's Sentinel. Defeat it to finish Act 1;
+  Act 2 is marked *Coming Soon*.
+- Nodes include combat, elite combat, event, shop and rest.
+- Victory opens a reward screen; the selected reward then returns you to the
+  map. Event/shop/rest screens provide working choices.
+- Single Player deploys **only the chosen hero and their deck**.
+- HP, max HP, coins and reward-modified deck persist across encounters.
+- Encounter HP/damage scaling is opt-in based on 1–4 party members; currently
+  used by the **one-player Act 1** mode.
 
-## Approved character writing
+Multiplayer follows the same hero selection and character bio screens, then
+opens the previously agreed **lobby placeholder**. It is not networked yet.
+There is no Custom mode.
 
-All four biographies, roles and passive descriptions are in
-`data/character_bios.json`. Starting HP is currently 60 for each character.
+## Heroes and implemented passives
 
-| Hero | Combat role | Approved passive |
-| --- | --- | --- |
-| Bryan — The Conduit Bender | Balanced / Control | Conduit Discipline: Start combat with 1 Block |
-| Carlos — The Rooftop Outlaw | Aggressive / Damage | Nail Gunner: First Attack each combat deals +1 damage |
-| Manny — The Superintendent | Support / Strategy | Toolbox Talk: Draw 1 additional card at combat start |
-| Cristian & HB — The Lift Operators | Defense / Teamwork | Elevated Position: Start combat with 2 Block |
+| Hero | Passive (applies at the beginning of each Act 1 encounter) |
+|---|---|
+| Bryan | Conduit Discipline: +1 starting Block |
+| Carlos | Nail Gunner: +1 damage on first accepted Attack each combat |
+| Manny | Toolbox Talk: draw 6 cards instead of 5 on combat start |
+| Cristian & HB | Elevated Position: +2 starting Block |
 
-**Milestone boundary:** Passives are displayed but *not yet activated* in the
-combat engine. The Act 1 branching map currently displays a preview layout,
-not fully generated encounter navigation. Selected-hero-only combat, passives,
-branching map/encounters, and multiplayer networking are future gameplay work.
-The **COMBAT PREVIEW** button deliberately opens the former four-hero sandbox
-so existing combat controls and regression tests remain accessible.
+All four start with 60 HP in the prototype. Character biographies and art are
+separate, reusable resources in `data/character_bios.json` and
+`art/characters/<hero>/`. Approved original assets in `art/heroes/` have
+**not been altered**.
 
-## Artwork source and reuse
+## First-pass Act 1 encounter economy
 
-`art/characters/<hero>/` stores:
-- `approved_reference.png`: approved character appearance (Bryan and Carlos v2)
-- `selection_portrait.png`: matching transparent hero art for selection
-- `bio_art.png`: matching transparent full hero art for biography
-- `combat_sprite.png`: approved combat art
+- Combat and elite combat use the existing Roboduck encounter templates;
+  solo encounters scale enemy health/damage down.
+- A combat win awards **25 coins** and one choice: add Attack, add Block, or
+  restore 8 HP.
+- Event: take 20 coins or repair 8 HP.
+- Shop: restore 15 HP for 20 coins, increase max HP by 5 for 30 coins, or leave.
+- Rest: restore 12 HP or gain 5 maximum HP (and heal 5).
+- Boss: one Alextron Sentinel prototype enemy using *temporary Roboduck artwork*
+  until the distinct boss art and mechanics are designed.
 
-At this milestone the three transparent poses start from the existing approved
-battlefield sprite, so appearances remain consistent. Originals under
-`art/heroes/` are unchanged; background scenery and interactive GUI controls
-are kept separate from the character images.
+**Prototype limitations:** The enemy roster, three starter card types, rewards,
+shop/events, and boss mechanics are intentionally simple placeholders for more
+varied Act 1 content. There is no Act 2, multiplayer networking, persistent
+save-and-resume, or relic system yet. Runs persist **between encounters only**;
+exiting the run does not save it. Balancing is preliminary.
 
-## Testing and reviewing builds
+## Development and testing
 
-The repository has two GitHub Actions workflows:
+Open `project.godot` in Godot 4.7.2 and press F5.
 
-- **APTITUDE Windows Godot Tests**: headless Windows import/startup and engine tests
-- **APTITUDE Graphical QA**: 1600×900 virtual display, synthetic menu/input
-  navigation, and 16 screenshots, including every character bio and combat
+GitHub Actions runs two independent suites on every commit:
 
-Open Actions → the latest Graphical QA run → Artifacts → `aptitude-graphical-qa`.
-For screenshots/baseline policy see `docs/GRAPHICAL_QA.md`.
+1. **APTITUDE Windows Godot Tests**: Windows asset import, battle tests, Act 1
+   seed/map/passive tests, and startup checks.
+2. **APTITUDE Graphical QA**: Godot 4.7.2 rendered at 1600×900 under a Linux
+   virtual desktop. It clicks real Godot buttons, drags a card in combat, goes
+   through the map/reward/shop/rest/event screens, and checks boss completion.
 
-Open `project.godot` in Godot 4.7.2 and press F5 to run locally.
+Open GitHub → **Actions** → latest **APTITUDE Graphical QA** → Artifacts →
+`aptitude-graphical-qa` to download original-size screenshots and logs.
+
+Technical docs: `docs/ACT1_MILESTONE2.md` and `docs/GRAPHICAL_QA.md`.
