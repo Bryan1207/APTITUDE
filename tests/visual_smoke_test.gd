@@ -59,6 +59,22 @@ func _run() -> void:
     gallery = _find_named(game, "CharacterDexGrid")
     _check(gallery != null and gallery.get_child_count() == 30, "all 30 unique ability cards displayed")
     await _capture("02_character_dex_abilities")
+    # The new HB illustrations sit below the initial CharacterDex viewport.
+    # Verify that the six entries exist and screenshot them after real scrolling.
+    var hb_count: int = 0
+    if gallery != null:
+        for card in gallery.get_children():
+            var info: Dictionary = card.get("entry") as Dictionary
+            if str(info.get("member", "")) == "HB":
+                hb_count += 1
+    _check(hb_count == 6, "all six HB signature cards render in CharacterDex")
+    var dex_scroll: ScrollContainer = _find_named(game, "CharacterDexScroll") as ScrollContainer
+    _check(dex_scroll != null, "ability gallery remains scrollable")
+    if dex_scroll != null:
+        dex_scroll.scroll_vertical = 1850
+        await _frames(5)
+        _check(dex_scroll.scroll_vertical > 0, "CharacterDex scrolls to HB ability cards")
+        await _capture("02_character_dex_hb_abilities")
     await _click_named("CharacterDexBackButton")
     _check(str(game.get("screen")) == "home", "CharacterDex Back returns to main menu")
     await _click_named("PlayMainMenuButton")
