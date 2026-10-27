@@ -1,0 +1,88 @@
+name: APTITUDE Graphical QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aptitude-visual-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  graphical-smoke:
+    name: Render and exercise UI / Godot 4.7.2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out APTITUDE
+        uses: actions/checkout@v4
+
+      - name: Set up software OpenGL and virtual desktop
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libgl1 libx11-6 libxcursor1 libxinerama1 libxi6 libxrandr2 libxrender1 libasound2t64
+          mkdir -p test-results/screenshots test-results/diffs
+
+      - name: Install official Godot 4.7.2 Linux editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=4.7.2-stable
+          archive="Godot_v${version}_linux.x86_64.zip"
+          curl --fail --location --retry 3 --output /tmp/godot.zip "https://github.com/godotengine/godot-builds/releases/download/${version}/${archive}"
+          mkdir -p /tmp/godot-package
+          unzip -q /tmp/godot.zip -d /tmp/godot-package
+          editor="$(find /tmp/godot-package -maxdepth 2 -type f -name 'Godot*linux.x86_64' | head -n 1)"
+          test -n "$editor"
+          sudo install -m 755 "$editor" /usr/local/bin/aptitude-godot
+          aptitude-godot --version
+
+      - name: Import assets and check scripts
+        shell: bash
+        run: |
+          set -o pipefail
+          aptitude-godot --headless --path . --editor --import --quit 2>&1 | tee test-results/visual_import.log
+
+      - name: Exercise menu, overlays, card dragging and victory; take screenshots
+        shell: bash
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          GALLIUM_DRIVER: llvmpipe
+          MESA_GL_VERSION_OVERRIDE: "3.3"
+        run: |
+          set -o pipefail
+          xvfb-run --auto-servernum --server-args="-screen 0 1600x900x24" \
+            timeout 150s aptitude-godot --path . --resolution 1600x900 \
+            --rendering-method gl_compatibility --script res://tests/visual_smoke_test.gd \
+            2>&1 | tee test-results/visual_smoke.log
+
+      - name: Check approved screenshot baselines
+        if: success()
+        shell: bash
+        run: |
+          python -m pip install --quiet Pillow
+          python tests/compare_visuals.py \
+            --screenshots test-results/screenshots \
+            --baselines tests/visual_baselines \
+            --diffs test-results/diffs \
+            --report test-results/visual_comparison.json \
+            --max-changed-percent 3.0
+
+      - name: Upload screenshots, differences, and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aptitude-graphical-qa
+          path: |
+            test-results/screenshots/
+            test-results/diffs/
+            test-results/*.log
+            test-results/visual_comparison.json
+          if-no-files-found: warn
+          retention-days: 21
