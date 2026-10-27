@@ -41,7 +41,7 @@ func _read_json(path: String) -> Dictionary:
 # Starts a NEW encounter and intentionally resets all combat state.
 # Only call this on an explicit New Run or Restart, never to select a hero.
 # The roster has four gameplay slots: Cristian & HB share one combined unit.
-func start(ids: Array, next_encounter_id: String = "city_intro") -> void:
+func start(ids: Array, next_encounter_id: String = "city_intro", options: Dictionary = {}) -> void:
 	var chosen: Array[String] = []
 	for raw_id in ids:
 		var hero_id: String = str(raw_id)
@@ -65,14 +65,26 @@ func start(ids: Array, next_encounter_id: String = "city_intro") -> void:
 	round_number = 1
 	next_sequence = 1
 	revision = 0
-	coins = 0
+	coins = int(options.get("coins", 0))
+	var passives_enabled: bool = bool(options.get("apply_passives", false))
+	var single_player: bool = chosen.size() == 1
 	for id in chosen:
 		var definition: Dictionary = heroes[id]
 		var deck: Array = definition["starter_deck"].duplicate()
+		if single_player and options.has("deck"):
+			deck = (options["deck"] as Array).duplicate()
 		_shuffle(deck)
-		party.append({"id":id, "hp":int(definition["max_hp"]), "max_hp":int(definition["max_hp"]),
-			"block":0, "strength":0, "energy":int(definition["base_energy"]),
-			"hand":[], "draw":deck, "discard":[], "exhaust":[], "powers_played":[], "done":false})
+		var maximum_hp: int = int(options.get("hero_max_hp", definition["max_hp"])) if single_player else int(definition["max_hp"])
+		var current_hp: int = clampi(int(options.get("hero_hp", maximum_hp)), 1, maximum_hp) if single_player else maximum_hp
+		var starting_block: int = 0
+		if passives_enabled and id == "bryan":
+			starting_block = 1
+		elif passives_enabled and id == "cristian_hb":
+			starting_block = 2
+		party.append({"id":id, "hp":current_hp, "max_hp":maximum_hp,
+			"block":starting_block, "strength":0, "energy":int(definition["base_energy"]),
+			"hand":[], "draw":deck, "discard":[], "exhaust":[], "powers_played":[], "done":false,
+			"passives_enabled":passives_enabled, "first_attack_used":false})
 	# Each spawn receives its own runtime instance ID. Reusing a definition
 	# never shares HP or status between different physical enemies.
 	var spawn_counts: Dictionary = {}
@@ -84,12 +96,20 @@ func start(ids: Array, next_encounter_id: String = "city_intro") -> void:
 		spawn_counts[type_id] = int(spawn_counts.get(type_id, 0)) + 1
 		var instance_id: String = "%s_%d" % [type_id, int(spawn_counts[type_id])]
 		var e: Dictionary = enemy_defs[type_id]
+		var target_hp: int = int(e["hp"])
+		var target_damage: int = int(e["damage"])
+		if bool(options.get("scale_for_party", false)):
+			# Proportional solo-to-four-player challenge, opt-in for Act 1 runs.
+			var team_size: int = chosen.size()
+			target_hp = maxi(1, roundi(float(target_hp) * (0.60 + 0.13 * float(team_size - 1))))
+			target_damage = maxi(1, roundi(float(target_damage) * (0.50 + 0.16 * float(team_size - 1))))
 		enemies.append({"id":instance_id, "type_id":type_id,
-			"hp":int(e["hp"]), "max_hp":int(e["hp"]), "block":0,
-			"damage":int(e["damage"])})
+			"hp":target_hp, "max_hp":target_hp, "block":0,
+			"damage":target_damage})
 	active_hero = str(party[0]["id"])
 	for hero in party:
-		_draw(hero, 5)
+		var bonus_draw: int = 1 if passives_enabled and str(hero["id"]) == "manny" else 0
+		_draw(hero, 5 + bonus_draw)
 	log_line("%s: The robots approach. Shared player phase begins." % str(encounter["name"]))
 	changed.emit()
 
@@ -174,6 +194,8 @@ func submit_card(hero_id: String, card_index: int, target_id: String) -> String:
 		var resolved_effect: Dictionary = effect.duplicate(true)
 		if str(card["type"]) == "attack" and str(effect["op"]) == "damage":
 			resolved_effect["value"] = int(effect["value"]) + int(hero["strength"])
+			if passives_enabled_for_hero(hero) and hero_id == "carlos" and not bool(hero["first_attack_used"]):
+				resolved_effect["value"] = int(resolved_effect["value"]) + 1
 		var targets: Array = []
 		match target_type:
 			"self": targets = [hero]
@@ -187,6 +209,8 @@ func submit_card(hero_id: String, card_index: int, target_id: String) -> String:
 			if target.is_empty():
 				continue
 			_apply_effect(resolved_effect, target)
+	if str(card["type"]) == "attack":
+		hero["first_attack_used"] = true
 	# Power cards are one-use for the entire encounter and do not recycle.
 	if str(card["type"]) == "power":
 		hero["powers_played"].append(card_id)
@@ -197,6 +221,9 @@ func submit_card(hero_id: String, card_index: int, target_id: String) -> String:
 	_check_outcome()
 	changed.emit()
 	return ""
+
+func passives_enabled_for_hero(hero: Dictionary) -> bool:
+	return bool(hero.get("passives_enabled", false))
 
 func _apply_effect(effect: Dictionary, target: Dictionary) -> void:
 	var amount: int = int(effect["value"])
