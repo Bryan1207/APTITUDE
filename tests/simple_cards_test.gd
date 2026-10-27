@@ -15,6 +15,7 @@ func _initialize() -> void:
 	_test_dead_enemy_does_not_attack()
 	_test_four_player_limit_and_combined_duo()
 	_test_encounter_templates_and_distinct_spawns()
+	_test_last_survivor_intent()
 	if failures == 0:
 		print("PASS: simple card / shared damage tests")
 	else:
@@ -174,3 +175,28 @@ func _test_encounter_templates_and_distinct_spawns() -> void:
 		_check(int(hero["hp"]) == 54, "only surviving Roboduck hits " + str(hero["id"]))
 	game.start(["bryan"], "city_trio_test")
 	_check(game.enemies.size() == 3 and str(game.enemies[2]["id"]) == "roboduck_3", "three Roboducks spawn uniquely from one definition")
+
+func _test_last_survivor_intent() -> void:
+	var game: AptitudeCombatEngine = CombatScript.new()
+	game.start(["bryan", "carlos"], "city_intro")
+	var enemy: Dictionary = game.enemies[0]
+	var bryan: Dictionary = game.hero_by_id("bryan")
+	var carlos: Dictionary = game.hero_by_id("carlos")
+	bryan["vulnerable"] = 2
+	_check(game.enemy_intent_text(enemy) == "⚔ 6",
+		"shared intent avoids promising one exact Vulnerable value for two living heroes")
+	carlos["hp"] = 0
+	_check(game.enemy_intent_text(enemy) == "⚔ 9",
+		"last surviving Bryan sees Vulnerable-adjusted 9 damage")
+	bryan["vulnerable"] = 0
+	_check(game.enemy_intent_text(enemy) == "⚔ 6",
+		"last survivor without Vulnerable sees unmodified damage")
+	bryan["hp"] = 0
+	carlos["hp"] = 60
+	carlos["vulnerable"] = 1
+	_check(game.enemy_intent_text(enemy) == "⚔ 9",
+		"last surviving Carlos also sees correct Vulnerable damage")
+	game.start(["bryan"], "city_intro")
+	game.hero_by_id("bryan")["vulnerable"] = 1
+	_check(game.enemy_intent_text(game.enemies[0]) == "⚔ 9",
+		"solo Vulnerable intent remains accurate")
