@@ -314,7 +314,18 @@ func enemy_intent_text(enemy: Dictionary) -> String:
 		"charge": return "↑ +%d" % int(move.get("strength", 1))
 		_:
 			var attack_damage: int = maxi(1, roundi(float(enemy["damage"]) * float(move.get("power", 1.0))))
-			attack_damage += int(enemy.get("strength", 0))
+			# A preceding team charge resolves before this machine attacks.
+			# Predict its bonus for the telegraph without mutating the battle.
+			var pending_team_strength: int = 0
+			for earlier_enemy in enemies:
+				if str(earlier_enemy["id"]) == str(enemy["id"]):
+					break
+				if int(earlier_enemy["hp"]) <= 0:
+					continue
+				var earlier_move: Dictionary = earlier_enemy.get("next_move", {})
+				if str(earlier_move.get("kind", "")) == "charge" and bool(earlier_move.get("team", false)):
+					pending_team_strength += int(earlier_move.get("strength", 1))
+			attack_damage += int(enemy.get("strength", 0)) + pending_team_strength
 			if int(enemy.get("weak", 0)) > 0:
 				attack_damage = maxi(1, roundi(float(attack_damage) * 0.75))
 			# When only one hero survives, the intent can display their exact

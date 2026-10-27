@@ -14,6 +14,7 @@ func _initialize() -> void:
     _check_enemy_bestiary()
     _test_enemy_debuff_lifecycle()
     _test_enemy_guard_lifecycle()
+    _test_team_charge_intents()
     _check_encounter_groups()
     _check_reward_pool()
     _test_reward_carries_into_next_fight()
@@ -261,6 +262,50 @@ func _test_enemy_guard_lifecycle() -> void:
     game.mark_done("bryan") # Round 5: guard again.
     _check(int(brute["block"]) == 5,
         "later guard starts fresh rather than accumulating old armor")
+
+func _test_team_charge_intents() -> void:
+    # The Foreman acts first and charges every living machine. Its Scout
+    # attacks later in that SAME enemy phase, so the displayed damage must
+    # include the pending charge rather than only the Scout's current Strength.
+    var game: AptitudeCombatEngine = Combat.new()
+    game.start(["bryan"], "teslabot_foreman")
+    var foreman: Dictionary = game.enemies[0]
+    var scout: Dictionary = game.enemies[1]
+    _check(str(foreman["type_id"]) == "foreman_droid"
+        and str(scout["type_id"]) == "teslabot_scout",
+        "Foreman encounter has coordinator before its attacking Scout")
+    _check(game.enemy_intent_text(scout) == "⚔ 6",
+        "Scout previews 5 base damage plus Foreman's pending team charge")
+    _check(int(scout["strength"]) == 0,
+        "reading enemy intents does not prematurely apply the charge")
+    game.mark_done("bryan")
+    _check(int(game.hero_by_id("bryan")["hp"]) == 54
+        and int(scout["strength"]) == 1,
+        "Scout actually deals the telegraphed 6 damage after team charge")
+
+    # A dead coordinator cannot contribute a phantom Strength bonus.
+    game.start(["bryan"], "teslabot_foreman")
+    foreman = game.enemies[0]
+    scout = game.enemies[1]
+    foreman["hp"] = 0
+    _check(game.enemy_intent_text(scout) == "⚔ 5",
+        "defeated Foreman no longer increases Scout's damage preview")
+    game.mark_done("bryan")
+    _check(int(game.hero_by_id("bryan")["hp"]) == 55,
+        "Scout deals its unbuffed 5 damage when Foreman is defeated")
+
+    # Status calculations must use the same order as actual damage:
+    # (base + charge) -> Weak -> Vulnerable, with rounding per step.
+    game.start(["bryan"], "teslabot_foreman")
+    scout = game.enemies[1]
+    scout["weak"] = 1
+    var hero: Dictionary = game.hero_by_id("bryan")
+    hero["vulnerable"] = 1
+    _check(game.enemy_intent_text(scout) == "⚔ 8",
+        "charge, Weak and Vulnerable combine to a precise 8-damage preview")
+    game.mark_done("bryan")
+    _check(int(hero["hp"]) == 52,
+        "actual charged, weakened Scout hit matches the 8-damage preview")
 
 func _check_encounter_groups() -> void:
     var data: Dictionary = _read("res://data/encounters.json")
