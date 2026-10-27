@@ -43,5 +43,491 @@
       }
     ],
     "description": "Give yourself or one ally +1 Strength for this fight. Exhaust."
+  },
+  "bryan_conduit_jab": {
+    "id": "bryan_conduit_jab",
+    "hero": "bryan",
+    "name": "Conduit Jab",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 3,
+    "target": "enemy",
+    "description": "Deal 3 damage with a precise conduit strike.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 3
+      }
+    ],
+    "rarity": "common",
+    "art_key": "conduit"
+  },
+  "bryan_live_wire": {
+    "id": "bryan_live_wire",
+    "hero": "bryan",
+    "name": "Live Wire",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 2,
+    "target": "enemy",
+    "description": "Deal 2 damage. Apply 2 Weak.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 2
+      },
+      {
+        "op": "weak",
+        "value": 2
+      }
+    ],
+    "rarity": "common",
+    "art_key": "wire"
+  },
+  "bryan_arc_flash": {
+    "id": "bryan_arc_flash",
+    "hero": "bryan",
+    "name": "Arc Flash",
+    "type": "attack",
+    "cost": 2,
+    "card_value": 5,
+    "target": "enemy",
+    "description": "Deal 5 damage. Apply 1 Vulnerable.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 5
+      },
+      {
+        "op": "vulnerable",
+        "value": 1
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "arc"
+  },
+  "bryan_lockout": {
+    "id": "bryan_lockout",
+    "hero": "bryan",
+    "name": "Lockout / Tagout",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 4,
+    "target": "self",
+    "description": "Gain 4 Block. Draw 1 card.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 4
+      },
+      {
+        "op": "draw",
+        "value": 1
+      }
+    ],
+    "rarity": "common",
+    "art_key": "lock"
+  },
+  "bryan_busbar": {
+    "id": "bryan_busbar",
+    "hero": "bryan",
+    "name": "Busbar Guard",
+    "type": "skill",
+    "cost": 2,
+    "card_value": 6,
+    "target": "self",
+    "description": "Gain 6 Block. Draw 2 cards.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 6
+      },
+      {
+        "op": "draw",
+        "value": 2
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "busbar"
+  },
+  "bryan_closed_circuit": {
+    "id": "bryan_closed_circuit",
+    "hero": "bryan",
+    "name": "Closed Circuit",
+    "type": "power",
+    "cost": 2,
+    "card_value": 1,
+    "target": "self",
+    "description": "Gain 1 Strength and 1 Plating (Block each new round).",
+    "effects": [
+      {
+        "op": "strength",
+        "value": 1
+      },
+      {
+        "op": "plating",
+        "value": 1
+      }
+    ],
+    "rarity": "rare",
+    "art_key": "circuit"
+  },
+  "carlos_nail_burst": {
+    "id": "carlos_nail_burst",
+    "hero": "carlos",
+    "name": "Nail Burst",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 2,
+    "target": "enemy",
+    "description": "Deal 2 damage twice.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 2,
+        "hits": 2
+      }
+    ],
+    "rarity": "common",
+    "art_key": "nails"
+  },
+  "carlos_roofbreaker": {
+    "id": "carlos_roofbreaker",
+    "hero": "carlos",
+    "name": "Roofbreaker",
+    "type": "attack",
+    "cost": 2,
+    "card_value": 7,
+    "target": "enemy",
+    "description": "Deal 7 damage.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 7
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "hammer"
+  },
+  "carlos_ridge_run": {
+    "id": "carlos_ridge_run",
+    "hero": "carlos",
+    "name": "Ridge Run",
+    "type": "attack",
+    "cost": 0,
+    "card_value": 2,
+    "target": "enemy",
+    "description": "Deal 2 damage. Costs 0 Energy.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 2
+      }
+    ],
+    "rarity": "common",
+    "art_key": "ridge"
+  },
+  "carlos_hard_hat": {
+    "id": "carlos_hard_hat",
+    "hero": "carlos",
+    "name": "Hard Hat",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 4,
+    "target": "self",
+    "description": "Gain 4 Block. Draw 1 card.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 4
+      },
+      {
+        "op": "draw",
+        "value": 1
+      }
+    ],
+    "rarity": "common",
+    "art_key": "hat"
+  },
+  "carlos_quick_reload": {
+    "id": "carlos_quick_reload",
+    "hero": "carlos",
+    "name": "Quick Reload",
+    "type": "skill",
+    "cost": 0,
+    "card_value": 1,
+    "target": "self",
+    "description": "Draw 2 cards. Exhaust.",
+    "effects": [
+      {
+        "op": "draw",
+        "value": 2
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "reload"
+  },
+  "carlos_full_send": {
+    "id": "carlos_full_send",
+    "hero": "carlos",
+    "name": "Full Send",
+    "type": "power",
+    "cost": 2,
+    "card_value": 1,
+    "target": "self",
+    "description": "Gain 2 Strength for this combat.",
+    "effects": [
+      {
+        "op": "strength",
+        "value": 2
+      }
+    ],
+    "rarity": "rare",
+    "art_key": "send"
+  },
+  "manny_punch_list": {
+    "id": "manny_punch_list",
+    "hero": "manny",
+    "name": "Punch List",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 2,
+    "target": "enemy",
+    "description": "Deal 2 damage. Apply 2 Weak.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 2
+      },
+      {
+        "op": "weak",
+        "value": 2
+      }
+    ],
+    "rarity": "common",
+    "art_key": "clipboard"
+  },
+  "manny_change_order": {
+    "id": "manny_change_order",
+    "hero": "manny",
+    "name": "Change Order",
+    "type": "attack",
+    "cost": 2,
+    "card_value": 4,
+    "target": "enemy",
+    "description": "Deal 4 damage. Draw 1 card.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 4
+      },
+      {
+        "op": "draw",
+        "value": 1,
+        "target": "self"
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "order"
+  },
+  "manny_redline": {
+    "id": "manny_redline",
+    "hero": "manny",
+    "name": "Redline",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 1,
+    "target": "enemy",
+    "description": "Deal 1 damage. Apply 2 Vulnerable.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 1
+      },
+      {
+        "op": "vulnerable",
+        "value": 2
+      }
+    ],
+    "rarity": "common",
+    "art_key": "redline"
+  },
+  "manny_safety_meeting": {
+    "id": "manny_safety_meeting",
+    "hero": "manny",
+    "name": "Safety Meeting",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 4,
+    "target": "ally",
+    "description": "Give yourself or an ally 4 Block.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 4
+      }
+    ],
+    "rarity": "common",
+    "art_key": "meeting"
+  },
+  "manny_crew_brief": {
+    "id": "manny_crew_brief",
+    "hero": "manny",
+    "name": "Crew Brief",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 3,
+    "target": "all_allies",
+    "description": "All living heroes gain 3 Block.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 3
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "crew"
+  },
+  "manny_site_plan": {
+    "id": "manny_site_plan",
+    "hero": "manny",
+    "name": "Site Plan",
+    "type": "power",
+    "cost": 2,
+    "card_value": 1,
+    "target": "self",
+    "description": "Gain 1 Plating and draw +1 each new round.",
+    "effects": [
+      {
+        "op": "plating",
+        "value": 1
+      },
+      {
+        "op": "focus",
+        "value": 1
+      }
+    ],
+    "rarity": "rare",
+    "art_key": "plan"
+  },
+  "cristian_hb_lift_ram": {
+    "id": "cristian_hb_lift_ram",
+    "hero": "cristian_hb",
+    "name": "Lift Ram",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 4,
+    "target": "enemy",
+    "description": "Deal 4 damage from the platform.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 4
+      }
+    ],
+    "rarity": "common",
+    "art_key": "lift"
+  },
+  "cristian_hb_spotter_shot": {
+    "id": "cristian_hb_spotter_shot",
+    "hero": "cristian_hb",
+    "name": "Spotter Shot",
+    "type": "attack",
+    "cost": 1,
+    "card_value": 2,
+    "target": "enemy",
+    "description": "Deal 2 damage. Apply 1 Weak.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 2
+      },
+      {
+        "op": "weak",
+        "value": 1
+      }
+    ],
+    "rarity": "common",
+    "art_key": "spotter"
+  },
+  "cristian_hb_overhead_drop": {
+    "id": "cristian_hb_overhead_drop",
+    "hero": "cristian_hb",
+    "name": "Overhead Drop",
+    "type": "attack",
+    "cost": 2,
+    "card_value": 7,
+    "target": "enemy",
+    "description": "Deal 7 damage.",
+    "effects": [
+      {
+        "op": "damage",
+        "value": 7
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "drop"
+  },
+  "cristian_hb_guardrail": {
+    "id": "cristian_hb_guardrail",
+    "hero": "cristian_hb",
+    "name": "Guardrail",
+    "type": "skill",
+    "cost": 1,
+    "card_value": 5,
+    "target": "self",
+    "description": "Gain 5 Block.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 5
+      }
+    ],
+    "rarity": "common",
+    "art_key": "guardrail"
+  },
+  "cristian_hb_double_check": {
+    "id": "cristian_hb_double_check",
+    "hero": "cristian_hb",
+    "name": "Double Check",
+    "type": "skill",
+    "cost": 0,
+    "card_value": 2,
+    "target": "self",
+    "description": "Gain 2 Block. Draw 1 card.",
+    "effects": [
+      {
+        "op": "block",
+        "value": 2
+      },
+      {
+        "op": "draw",
+        "value": 1
+      }
+    ],
+    "rarity": "uncommon",
+    "art_key": "check"
+  },
+  "cristian_hb_high_ground": {
+    "id": "cristian_hb_high_ground",
+    "hero": "cristian_hb",
+    "name": "High Ground",
+    "type": "power",
+    "cost": 2,
+    "card_value": 1,
+    "target": "self",
+    "description": "Gain 2 Plating and 1 Strength.",
+    "effects": [
+      {
+        "op": "plating",
+        "value": 2
+      },
+      {
+        "op": "strength",
+        "value": 1
+      }
+    ],
+    "rarity": "rare",
+    "art_key": "highground"
   }
 }

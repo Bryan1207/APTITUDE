@@ -1,0 +1,20 @@
+{
+  "normal": [
+    "city_intro",
+    "yard_rivets",
+    "yard_welders",
+    "yard_scaffolds",
+    "yard_mixer",
+    "teslabot_patrol",
+    "teslabot_brute_bay",
+    "teslabot_capacitors",
+    "teslabot_foreman"
+  ],
+  "elite": [
+    "yard_elite",
+    "teslabot_elite"
+  ],
+  "boss": [
+    "alextron_boss"
+  ]
+}

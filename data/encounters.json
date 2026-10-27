@@ -37,5 +37,102 @@
     "enemies": [
       "alextron_sentinel"
     ]
+  },
+  "yard_rivets": {
+    "id": "yard_rivets",
+    "name": "Scrapyard Rivet Patrol",
+    "act": 1,
+    "background": "res://art/backgrounds/yard_dusk.svg",
+    "enemies": [
+      "rivet_drone",
+      "roboduck"
+    ]
+  },
+  "yard_welders": {
+    "id": "yard_welders",
+    "name": "Welding Bay",
+    "act": 1,
+    "background": "res://art/backgrounds/yard_dusk.svg",
+    "enemies": [
+      "arc_welder"
+    ]
+  },
+  "yard_scaffolds": {
+    "id": "yard_scaffolds",
+    "name": "Collapsed Scaffold",
+    "act": 1,
+    "background": "res://art/backgrounds/yard_dusk.svg",
+    "enemies": [
+      "scaffold_spider",
+      "roboduck"
+    ]
+  },
+  "yard_mixer": {
+    "id": "yard_mixer",
+    "name": "Concrete Mixer Yard",
+    "act": 1,
+    "background": "res://art/backgrounds/yard_dusk.svg",
+    "enemies": [
+      "cement_mixer"
+    ]
+  },
+  "teslabot_patrol": {
+    "id": "teslabot_patrol",
+    "name": "Tesla Factory Scouts",
+    "act": 1,
+    "background": "res://art/backgrounds/teslabot_factory.svg",
+    "enemies": [
+      "teslabot_scout",
+      "teslabot_scout"
+    ]
+  },
+  "teslabot_brute_bay": {
+    "id": "teslabot_brute_bay",
+    "name": "Tesla Heavy Assembly",
+    "act": 1,
+    "background": "res://art/backgrounds/teslabot_factory.svg",
+    "enemies": [
+      "teslabot_brute"
+    ]
+  },
+  "teslabot_capacitors": {
+    "id": "teslabot_capacitors",
+    "name": "Capacitor Hall",
+    "act": 1,
+    "background": "res://art/backgrounds/teslabot_factory.svg",
+    "enemies": [
+      "teslabot_capacitor",
+      "teslabot_scout"
+    ]
+  },
+  "teslabot_foreman": {
+    "id": "teslabot_foreman",
+    "name": "Tesla Command Deck",
+    "act": 1,
+    "background": "res://art/backgrounds/teslabot_factory.svg",
+    "enemies": [
+      "foreman_droid",
+      "teslabot_scout"
+    ]
+  },
+  "yard_elite": {
+    "id": "yard_elite",
+    "name": "Scrapyard Heavy Crew",
+    "act": 1,
+    "background": "res://art/backgrounds/yard_dusk.svg",
+    "enemies": [
+      "cement_mixer",
+      "arc_welder"
+    ]
+  },
+  "teslabot_elite": {
+    "id": "teslabot_elite",
+    "name": "Tesla Security Detail",
+    "act": 1,
+    "background": "res://art/backgrounds/teslabot_factory.svg",
+    "enemies": [
+      "teslabot_brute",
+      "foreman_droid"
+    ]
   }
 }

@@ -20,5 +20,213 @@
     "target": "all_living_heroes",
     "sprite": "res://art/enemies/roboduck.png",
     "description": "Prototype Act 1 boss. Temporary Roboduck art; dedicated Alextron art will replace it."
+  },
+  "teslabot_scout": {
+    "id": "teslabot_scout",
+    "name": "Tesla Scout",
+    "hp": 16,
+    "damage": 5,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/teslabot_scout.svg",
+    "theme": "teslabot",
+    "description": "Fast probe chassis with a charged stun-prod.",
+    "moves": [
+      {
+        "kind": "attack",
+        "power": 1
+      },
+      {
+        "kind": "charge",
+        "strength": 1
+      },
+      {
+        "kind": "attack",
+        "power": 1.15
+      }
+    ]
+  },
+  "teslabot_brute": {
+    "id": "teslabot_brute",
+    "name": "Tesla Brute",
+    "hp": 26,
+    "damage": 7,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/teslabot_brute.svg",
+    "theme": "teslabot",
+    "description": "Armored industrial exosuit that telegraphs heavy blows.",
+    "moves": [
+      {
+        "kind": "attack",
+        "power": 1
+      },
+      {
+        "kind": "guard",
+        "block": 5
+      },
+      {
+        "kind": "attack",
+        "power": 1.35
+      }
+    ]
+  },
+  "teslabot_capacitor": {
+    "id": "teslabot_capacitor",
+    "name": "Capacitor Bot",
+    "hp": 19,
+    "damage": 4,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/teslabot_capacitor.svg",
+    "theme": "teslabot",
+    "description": "Stores dangerous voltage between discharges.",
+    "moves": [
+      {
+        "kind": "charge",
+        "strength": 2
+      },
+      {
+        "kind": "attack",
+        "power": 1.5
+      },
+      {
+        "kind": "guard",
+        "block": 3
+      }
+    ]
+  },
+  "rivet_drone": {
+    "id": "rivet_drone",
+    "name": "Rivet Drone",
+    "hp": 14,
+    "damage": 4,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/rivet_drone.svg",
+    "theme": "yard",
+    "description": "Flying rivet launcher, capable of two quick hits.",
+    "moves": [
+      {
+        "kind": "attack",
+        "power": 0.7,
+        "hits": 2
+      },
+      {
+        "kind": "attack",
+        "power": 1
+      }
+    ]
+  },
+  "arc_welder": {
+    "id": "arc_welder",
+    "name": "Arc Welder",
+    "hp": 21,
+    "damage": 5,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/arc_welder.svg",
+    "theme": "yard",
+    "description": "Unstable welding machine that exposes weak points.",
+    "moves": [
+      {
+        "kind": "attack_vulnerable",
+        "power": 1,
+        "status": 1
+      },
+      {
+        "kind": "guard",
+        "block": 4
+      },
+      {
+        "kind": "attack",
+        "power": 1.3
+      }
+    ]
+  },
+  "scaffold_spider": {
+    "id": "scaffold_spider",
+    "name": "Scaffold Spider",
+    "hp": 18,
+    "damage": 5,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/scaffold_spider.svg",
+    "theme": "yard",
+    "description": "Eight-legged climbing robot with protective plating.",
+    "moves": [
+      {
+        "kind": "guard",
+        "block": 5
+      },
+      {
+        "kind": "attack",
+        "power": 1
+      },
+      {
+        "kind": "attack",
+        "power": 1.1
+      }
+    ]
+  },
+  "cement_mixer": {
+    "id": "cement_mixer",
+    "name": "Cement Mixer MK-II",
+    "hp": 28,
+    "damage": 6,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/cement_mixer.svg",
+    "theme": "yard",
+    "description": "Rolling concrete mixer with a brutal crushing cycle.",
+    "moves": [
+      {
+        "kind": "attack",
+        "power": 0.85
+      },
+      {
+        "kind": "charge",
+        "strength": 1
+      },
+      {
+        "kind": "attack",
+        "power": 1.5
+      }
+    ]
+  },
+  "foreman_droid": {
+    "id": "foreman_droid",
+    "name": "Foreman Droid",
+    "hp": 25,
+    "damage": 5,
+    "enemy_type": "normal",
+    "intent": "pattern",
+    "target": "all_living_heroes",
+    "sprite": "res://art/enemies/foreman_droid.svg",
+    "theme": "teslabot",
+    "description": "Battlefield coordinator that strengthens nearby machines.",
+    "moves": [
+      {
+        "kind": "charge",
+        "strength": 1,
+        "team": true
+      },
+      {
+        "kind": "attack_weak",
+        "power": 0.9,
+        "status": 1
+      },
+      {
+        "kind": "guard",
+        "block": 5
+      }
+    ]
   }
 }
