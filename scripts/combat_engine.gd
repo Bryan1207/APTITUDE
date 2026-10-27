@@ -84,6 +84,7 @@ func start(ids: Array, next_encounter_id: String = "city_intro", options: Dictio
 		party.append({"id":id, "hp":current_hp, "max_hp":maximum_hp,
 			"block":starting_block, "strength":0, "energy":int(definition["base_energy"]),
 			"hand":[], "draw":deck, "discard":[], "exhaust":[], "powers_played":[], "done":false,
+			"weak":0, "vulnerable":0, "plating":0, "focus":0,
 			"passives_enabled":passives_enabled, "first_attack_used":false})
 	# Each spawn receives its own runtime instance ID. Reusing a definition
 	# never shares HP or status between different physical enemies.
@@ -105,8 +106,10 @@ func start(ids: Array, next_encounter_id: String = "city_intro", options: Dictio
 			target_damage = maxi(1, roundi(float(target_damage) * (0.50 + 0.16 * float(team_size - 1))))
 		enemies.append({"id":instance_id, "type_id":type_id,
 			"hp":target_hp, "max_hp":target_hp, "block":0,
-			"damage":target_damage})
+			"weak":0, "vulnerable":0, "strength":0,
+			"damage":target_damage, "next_move":{}})
 	active_hero = str(party[0]["id"])
+	_prepare_enemy_intents()
 	for hero in party:
 		var bonus_draw: int = 1 if passives_enabled and str(hero["id"]) == "manny" else 0
 		_draw(hero, 5 + bonus_draw)
@@ -161,6 +164,8 @@ func submit_card(hero_id: String, card_index: int, target_id: String) -> String:
 	if not cards.has(card_id):
 		return "Unknown card"
 	var card: Dictionary = cards[card_id]
+	if str(card.get("hero", hero_id)) != hero_id:
+		return "This card belongs to another hero"
 	var cost: int = int(card["cost"])
 	if cost > int(hero["energy"]):
 		return "Not enough energy"
@@ -188,16 +193,12 @@ func submit_card(hero_id: String, card_index: int, target_id: String) -> String:
 	# action resolves atomically before another accepted command is processed.
 	log_line("#%d  %s → %s" % [seq, str(heroes[hero_id]["name"]), str(card["name"])])
 	for effect in card["effects"]:
-		# Strength boosts an ATTACK card's direct damage, never block/power.
-		# Calculate at accepted-action execution time, so an earlier Demon
-		# buff immediately affects later attacks in the same global FIFO.
-		var resolved_effect: Dictionary = effect.duplicate(true)
-		if str(card["type"]) == "attack" and str(effect["op"]) == "damage":
-			resolved_effect["value"] = int(effect["value"]) + int(hero["strength"])
-			if passives_enabled_for_hero(hero) and hero_id == "carlos" and not bool(hero["first_attack_used"]):
-				resolved_effect["value"] = int(resolved_effect["value"]) + 1
+		# Every effect can override the card's main target (e.g. hit an enemy,
+		# then draw a card for the caster). Global accepted-action FIFO remains intact.
+		var resolved: Dictionary = effect.duplicate(true)
+		var effect_type: String = str(effect.get("target", target_type))
 		var targets: Array = []
-		match target_type:
+		match effect_type:
 			"self": targets = [hero]
 			"ally": targets = [hero_by_id(target_id)]
 			"all_allies":
@@ -205,15 +206,33 @@ func submit_card(hero_id: String, card_index: int, target_id: String) -> String:
 					if int(teammate["hp"]) > 0:
 						targets.append(teammate)
 			"enemy": targets = [_enemy_by_id(target_id)]
-		for target in targets:
-			if target.is_empty():
-				continue
-			_apply_effect(resolved_effect, target)
+		if str(effect["op"]) == "damage":
+			var base_damage: int = int(effect["value"])
+			if str(card["type"]) == "attack":
+				base_damage += int(hero["strength"])
+				if int(hero.get("weak", 0)) > 0:
+					base_damage = maxi(0, roundi(float(base_damage) * 0.75))
+			var hit_count: int = maxi(1, int(effect.get("hits", 1)))
+			for index in range(hit_count):
+				var attack_value: int = base_damage
+				if str(card["type"]) == "attack" and passives_enabled_for_hero(hero) and hero_id == "carlos" and not bool(hero["first_attack_used"]) and index == 0:
+					attack_value += 1
+				for target in targets:
+					if target.is_empty() or int(target.get("hp", 0)) <= 0:
+						continue
+					_apply_effect({"op":"damage", "value":attack_value}, target)
+		else:
+			for target in targets:
+				if target.is_empty():
+					continue
+				_apply_effect(resolved, target)
 	if str(card["type"]) == "attack":
 		hero["first_attack_used"] = true
 	# Power cards are one-use for the entire encounter and do not recycle.
 	if str(card["type"]) == "power":
 		hero["powers_played"].append(card_id)
+		hero["exhaust"].append(card_id)
+	elif bool(card.get("exhaust", false)) or card_id == "carlos_quick_reload":
 		hero["exhaust"].append(card_id)
 	else:
 		hero["discard"].append(card_id)
@@ -229,13 +248,17 @@ func _apply_effect(effect: Dictionary, target: Dictionary) -> void:
 	var amount: int = int(effect["value"])
 	match str(effect["op"]):
 		"damage":
-			var absorbed: int = min(amount, int(target["block"]))
+			if int(target.get("vulnerable", 0)) > 0:
+				amount = maxi(0, roundi(float(amount) * 1.5))
+			var absorbed: int = mini(amount, int(target["block"]))
 			target["block"] = int(target["block"]) - absorbed
-			target["hp"] = max(0,int(target["hp"]) - (amount - absorbed))
+			target["hp"] = maxi(0, int(target["hp"]) - (amount - absorbed))
 		"block": target["block"] = int(target["block"]) + amount
-		"heal": target["hp"] = min(int(target["max_hp"]), int(target["hp"]) + amount)
+		"heal": target["hp"] = mini(int(target["max_hp"]), int(target["hp"]) + amount)
 		"draw": _draw(target, amount)
 		"strength": target["strength"] = int(target["strength"]) + amount
+		"weak", "vulnerable", "plating", "focus":
+			target[str(effect["op"])] = int(target.get(str(effect["op"]), 0)) + amount
 
 func _enemy_by_id(id: String) -> Dictionary:
 	for e in enemies:
@@ -268,39 +291,90 @@ func mark_done(hero_id: String) -> void:
 		_enemy_phase()
 	changed.emit()
 
+## Fixed, telegraphed machine patterns. Original Roboduck (and the reserved
+## prototype boss) retain their established attack-every-turn behavior.
+func _prepare_enemy_intents() -> void:
+	for enemy in enemies:
+		var definition: Dictionary = enemy_defs[str(enemy["type_id"])]
+		var pattern: Array = definition.get("moves", [])
+		if pattern.is_empty():
+			enemy["next_move"] = {"kind":"attack", "power":1.0, "hits":1}
+		else:
+			enemy["next_move"] = (pattern[(round_number - 1) % pattern.size()] as Dictionary).duplicate(true)
+
+func enemy_intent_text(enemy: Dictionary) -> String:
+	if int(enemy["hp"]) <= 0:
+		return ""
+	var move: Dictionary = enemy.get("next_move", {})
+	var kind: String = str(move.get("kind", "attack"))
+	match kind:
+		"guard": return "◆ +%d" % int(move.get("block", 3))
+		"charge": return "↑ +%d" % int(move.get("strength", 1))
+		_:
+			var attack_damage: int = maxi(1, roundi(float(enemy["damage"]) * float(move.get("power", 1.0))))
+			attack_damage += int(enemy.get("strength", 0))
+			if int(enemy.get("weak", 0)) > 0:
+				attack_damage = maxi(1, roundi(float(attack_damage) * 0.75))
+			var hits: int = maxi(1, int(move.get("hits", 1)))
+			return "⚔ %d" % attack_damage + (" ×%d" % hits if hits > 1 else "") + (" !" if kind != "attack" else "")
+
 func _enemy_phase() -> void:
 	phase = "enemy"
-	# Every surviving robot performs a party-wide attack. Each LIVING hero
-	# separately takes the FULL listed damage; block is applied individually.
-	# Defeated robots do nothing, and heroes who reach 0 HP stop being hit.
 	for enemy in enemies:
 		if int(enemy["hp"]) <= 0:
 			continue
-		var amount: int = int(enemy["damage"])
-		var hit_count: int = 0
-		for hero in party:
-			if int(hero["hp"]) <= 0:
-				continue
-			_apply_effect({"op":"damage", "value":amount}, hero)
-			hit_count += 1
-		if hit_count == 0:
-			break
-		log_line(str(enemy_defs[enemy["type_id"]]["name"]) + " attacks all %d living heroes for %d each" % [hit_count, amount])
+		var move: Dictionary = enemy.get("next_move", {"kind":"attack"})
+		var kind: String = str(move.get("kind", "attack"))
+		var name: String = str(enemy_defs[str(enemy["type_id"])]["name"])
+		match kind:
+			"guard":
+				enemy["block"] = int(enemy["block"]) + int(move.get("block", 3))
+				log_line(name + " braces behind armor.")
+			"charge":
+				var strength: int = int(move.get("strength", 1))
+				if bool(move.get("team", false)):
+					for machine in enemies:
+						if int(machine["hp"]) > 0:
+							machine["strength"] = int(machine.get("strength", 0)) + strength
+				else:
+					enemy["strength"] = int(enemy["strength"]) + strength
+				log_line(name + " charges up.")
+			_:
+				var amount: int = maxi(1, roundi(float(enemy["damage"]) * float(move.get("power", 1.0))))
+				amount += int(enemy.get("strength", 0))
+				if int(enemy.get("weak", 0)) > 0:
+					amount = maxi(1, roundi(float(amount) * 0.75))
+				var hits: int = maxi(1, int(move.get("hits", 1)))
+				for hero in party:
+					if int(hero["hp"]) <= 0:
+						continue
+					for _hit in range(hits):
+						_apply_effect({"op":"damage","value":amount}, hero)
+					if kind == "attack_weak":
+						_apply_effect({"op":"weak", "value":int(move.get("status", 1))}, hero)
+					elif kind == "attack_vulnerable":
+						_apply_effect({"op":"vulnerable", "value":int(move.get("status", 1))}, hero)
+				log_line("%s attacks for %d%s." % [name, amount, " x%d" % hits if hits > 1 else ""])
 	_check_outcome()
 	if phase == "victory" or phase == "defeat":
 		return
 	round_number += 1
 	phase = "player"
+	for enemy in enemies:
+		enemy["weak"] = maxi(0, int(enemy.get("weak", 0)) - 1)
+		enemy["vulnerable"] = maxi(0, int(enemy.get("vulnerable", 0)) - 1)
+	_prepare_enemy_intents()
 	for hero in party:
-		# Block is temporary; Power-granted Strength persists until encounter end.
-		hero["block"] = 0
+		hero["block"] = int(hero.get("plating", 0))
 		hero["done"] = int(hero["hp"]) <= 0
 		hero["energy"] = int(heroes[str(hero["id"])]["base_energy"])
 		for card_id in hero["hand"]:
 			hero["discard"].append(card_id)
 		hero["hand"].clear()
 		if int(hero["hp"]) > 0:
-			_draw(hero, int(heroes[str(hero["id"])]["draw_count"]))
+			_draw(hero, int(heroes[str(hero["id"])]["draw_count"]) + int(hero.get("focus", 0)))
+		hero["weak"] = maxi(0, int(hero.get("weak", 0)) - 1)
+		hero["vulnerable"] = maxi(0, int(hero.get("vulnerable", 0)) - 1)
 	log_line("Round %d begins" % round_number)
 
 func _check_outcome() -> void:
