@@ -1,0 +1,16 @@
+# Godot-generated import/cache data
+.godot/
+.import/
+
+# Generated build outputs and temporary files
+build/
+dist/
+*.tmp
+
+# Local editor settings
+.vscode/
+.idea/
+
+# OS metadata
+Thumbs.db
+.DS_Store
