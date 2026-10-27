@@ -74,52 +74,42 @@ func _run() -> void:
         await _click_named("BackFromBioButton")
         _check(str(game.get("screen")) == "select", "Bio Back returns to selection: " + id)
 
-    # Re-select Bryan and confirm to the Act 1 placeholder.
+    # Confirm Bryan to the REAL randomized map, then enter a connected combat.
     await _click_named("SelectHeroBryan")
     await _click_named("ContinueSelectionButton")
     await _click_named("ConfirmHeroButton")
-    _check(str(game.get("screen")) == "act1_map", "Single Player confirmation opens Act 1")
-    await _capture("06_act1_map")
+    _check(str(game.get("screen")) == "act1_map", "Single Player confirmation opens the real Act 1 map")
+    var run: AptitudeAct1Run = game.get("run_state") as AptitudeAct1Run
+    _check(run.floors.size() == 15 and run.available_nodes().size() == 3, "Act 1 has 15 floors and three starting paths")
+    _check(run.hero_id == "bryan" and run.current_floor == -1, "chosen hero persists into new run")
+    await _capture("06_act1_branching_map")
 
-    # Return to Play, verify Multiplayer follows the same select/bio route.
-    await _click_named("BackFromMapButton")
-    await _click_named("BackFromSelectButton")
-    _check(str(game.get("screen")) == "play", "Back returns to mode selection")
-    await _click_named("MultiplayerModeButton")
-    _check(str(game.get("screen")) == "select", "Multiplayer leads to character selection")
-    await _click_named("SelectHeroCristianHb")
-    await _click_named("ContinueSelectionButton")
-    _check(str(game.get("screen")) == "bio", "Multiplayer also uses character bio")
-    await _click_named("ConfirmHeroButton")
-    _check(str(game.get("screen")) == "lobby", "Multiplayer confirmation opens lobby placeholder")
-    await _capture("07_multiplayer_lobby")
-    await _click_named("BackFromLobbyButton")
-    _check(str(game.get("screen")) == "bio", "Lobby Back returns to bio")
-
-    # Preserve accessibility and regression tests for the original four-hero prototype.
-    await _click_named("BackFromBioButton")
-    await _click_named("BackFromSelectButton")
-    await _click_named("SinglePlayerModeButton")
-    await _click_named("SelectHeroBryan")
-    await _click_named("ContinueSelectionButton")
-    await _click_named("ConfirmHeroButton")
-    await _click_named("CombatPreviewButton")
-    _check(str(game.get("screen")) == "battle", "Combat Preview launches legacy encounter")
+    var first_fight: Dictionary = {}
+    for node in run.available_nodes():
+        if str(node["kind"]) == "combat":
+            first_fight = node
+            break
+    _check(not first_fight.is_empty(), "opening paths include combat")
+    if not first_fight.is_empty():
+        await _click_named("MapNode" + str(first_fight["id"]).replace("_", ""))
+    _check(str(game.get("screen")) == "battle", "clicking an available connected node starts combat")
     var combat: AptitudeCombatEngine = game.get("combat") as AptitudeCombatEngine
-    _check(combat.party.size() == 4, "prototype encounter still has four heroes")
-    await _capture("08_combat_preview")
+    _check(combat.party.size() == 1, "single-player combat has exactly one hero")
+    _check(int(combat.hero_by_id("bryan")["block"]) == 1, "Bryan passive is active in solo combat")
+    _check(int(combat.enemies[0]["max_hp"]) == 9, "solo encounter scales enemy health")
+    await _capture("07_solo_combat")
+
     await _click_text("DECK (")
-    _check(str(game.get("overlay_screen")) == "deck", "Deck overlay opens")
-    await _capture("09_deck_inventory")
+    _check(str(game.get("overlay_screen")) == "deck", "deck overlay still works")
+    await _capture("08_deck_inventory")
     await _click_text("CLOSE")
     await _click_text("SETTINGS")
-    _check(str(game.get("overlay_screen")) == "settings", "Combat Settings opens")
-    await _capture("10_combat_settings")
+    _check(str(game.get("overlay_screen")) == "settings", "battle settings still works")
+    await _capture("09_combat_settings")
     await _click_text("CLOSE")
 
-    # Test card dragging, enemy targeting and victory exactly as before.
+    # Real card drag/drop: the solo hero damages a real enemy target.
     var hero: Dictionary = combat.hero_by_id("bryan")
-    combat.select_hero("bryan")
     hero["hand"].insert(0, "attack")
     game.call("_redraw")
     await _frames(3)
@@ -131,23 +121,66 @@ func _run() -> void:
     await _mouse_move(card_center)
     _send_button(card_center, true)
     await _frames(2)
-    _check(not (game.get("drag_state") as Dictionary).is_empty(), "card press starts drag")
+    _check(not (game.get("drag_state") as Dictionary).is_empty(), "card press begins drag")
     await _mouse_move(enemy_center)
     await _frames(3)
-    await _capture("11_drag_targeting")
+    await _capture("10_drag_targeting")
     _send_button(enemy_center, false)
     await _frames(3)
-    _check(int(combat.enemies[0]["hp"]) == enemy_hp - 1, "Attack dropped on Roboduck deals damage")
-    await _capture("12_after_card_play")
+    _check(int(combat.enemies[0]["hp"]) == enemy_hp - 1, "Attack damages Roboduck")
+    await _capture("11_after_card_play")
+
+    # Test-only accelerated enemy defeat to verify run results and reward flow.
     combat.enemies[0]["hp"] = 0
     combat.call("_check_outcome")
     combat.changed.emit()
     await _frames(3)
-    _check(combat.phase == "victory", "victory state visible")
-    await _capture("13_victory")
+    _check(str(game.get("screen")) == "act1_reward", "victory advances to reward selection")
+    _check(run.coins == 25, "coins persist after fight")
+    await _capture("12_victory_reward")
+    await _click_named("RewardAttackButton")
+    _check(str(game.get("screen")) == "act1_map", "reward returns to branching map")
+    _check(run.deck.size() == 11, "chosen reward persists as eleventh card")
+    _check(run.current_floor == 0, "map progress persists after battle")
+    await _capture("13_map_after_reward")
+
+    # Test-only map fast-forward. Full 15-floor route legality is tested separately
+    # in tests/act1_run_test.gd; this verifies boss screen routing and rendering.
+    run.current_floor = 14
+    run.current_node_id = "14_1"
+    run.state = "map"
+    game.call("_redraw")
+    await _frames(3)
+    _check(run.available_nodes().size() == 1, "boss is only available after floor 15")
+    await _capture("14_boss_unlocked")
+    await _click_named("MapNodealextronboss")
+    _check(str(game.get("screen")) == "battle" and combat.party.size() == 1, "boss node launches solo boss encounter")
+    _check(str(combat.enemies[0]["type_id"]) == "alextron_sentinel", "boss is a distinct enemy encounter")
+    await _capture("15_boss_combat")
+    combat.enemies[0]["hp"] = 0
+    combat.call("_check_outcome")
+    combat.changed.emit()
+    await _frames(3)
+    _check(str(game.get("screen")) == "act1_complete", "defeating boss completes Act 1")
+    await _capture("16_act1_complete")
+    await _click_named("CompleteReturnButton")
+    _check(str(game.get("screen")) == "home", "Act 1 completion returns to main menu")
+
+    # Multiplayer follows the same character select/bio flow but stays a placeholder.
+    await _click_named("PlayMainMenuButton")
+    await _click_named("MultiplayerModeButton")
+    _check(str(game.get("screen")) == "select", "Multiplayer opens character selection")
+    await _click_named("SelectHeroCristianHb")
+    await _click_named("ContinueSelectionButton")
+    _check(str(game.get("screen")) == "bio", "Multiplayer includes character bio")
+    await _click_named("ConfirmHeroButton")
+    _check(str(game.get("screen")) == "lobby", "Multiplayer opens lobby placeholder")
+    await _capture("17_multiplayer_lobby")
+    await _click_named("BackFromLobbyButton")
+    _check(str(game.get("screen")) == "bio", "Lobby Back returns to character bio")
 
     if failures == 0:
-        print("PASS: menu flow, character bios, interactive combat preview and screenshots")
+        print("PASS: Act 1 menu, solo combat, rewards, boss and multiplayer placeholder screenshots")
     else:
         push_error("FAIL: %d graphical smoke assertions" % failures)
     quit(1 if failures > 0 else 0)
