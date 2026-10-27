@@ -36,42 +36,88 @@ func _run() -> void:
     game = scene.instantiate() as Control
     root.add_child(game)
     await _frames(5)
-
-    _check(str(game.get("screen")) == "home", "launches on main menu")
+    _check(str(game.get("screen")) == "home", "opens at Main Menu")
     await _capture("01_main_menu")
 
-    # Click the NATIVE button controls, verifying hit regions, not just invoking callbacks.
-    await _click_named("SettingsMenuButton")
-    _check(str(game.get("overlay_screen")) == "settings", "Settings button opens overlay")
-    await _capture("02_menu_settings")
+    # Main Menu -> Settings -> Back -> Play.
+    await _click_named("SettingsMainMenuButton")
+    _check(str(game.get("overlay_screen")) == "settings", "Main Menu settings opens")
+    await _capture("02_main_settings")
     await _click_text("CLOSE")
-    _check(str(game.get("overlay_screen")) == "", "Settings close returns to menu")
+    _check(str(game.get("overlay_screen")) == "", "Settings closes")
+    await _click_named("PlayMainMenuButton")
+    _check(str(game.get("screen")) == "play", "Play opens mode selection")
+    await _capture("03_play_modes")
+    _check(_find_named(game, "CustomModeButton") == null, "No Custom mode")
 
-    await _click_named("MultiplayerMenuButton")
-    _check(str(game.get("overlay_screen")) == "multiplayer", "Multiplayer notice opens")
-    await _capture("03_multiplayer_notice")
-    await _click_text("CLOSE")
-    _check(str(game.get("overlay_screen")) == "", "Multiplayer notice closes")
+    # Single Player -> character selection. Continue disabled before choosing.
+    await _click_named("SinglePlayerModeButton")
+    _check(str(game.get("screen")) == "select", "Single Player leads to character selection")
+    await _capture("04_character_selection")
+    var continue_button: Button = _find_named(game, "ContinueSelectionButton") as Button
+    _check(continue_button != null and continue_button.disabled, "Continue disabled until hero selected")
 
-    await _click_named("SinglePlayerMenuButton")
-    _check(str(game.get("screen")) == "battle", "Single Player button enters combat")
+    # All four bio screens are generated from the same reusable layout and art library.
+    for index in range(4):
+        var id: String = ["bryan", "carlos", "manny", "cristian_hb"][index]
+        var button_id: String = ["SelectHeroBryan", "SelectHeroCarlos", "SelectHeroManny", "SelectHeroCristianHb"][index]
+        await _click_named(button_id)
+        continue_button = _find_named(game, "ContinueSelectionButton") as Button
+        _check(continue_button != null and not continue_button.disabled, "Hero selection enables Continue: " + id)
+        await _click_named("ContinueSelectionButton")
+        _check(str(game.get("screen")) == "bio", "Selected hero opens bio: " + id)
+        var back_button: Control = _find_named(game, "BackFromBioButton")
+        var confirm_button: Control = _find_named(game, "ConfirmHeroButton")
+        _check(back_button != null and confirm_button != null, "Bio has Back and Confirm: " + id)
+        _check(_count_buttons(game) == 2, "Bio contains exactly two buttons: " + id)
+        await _capture("05_bio_" + id)
+        await _click_named("BackFromBioButton")
+        _check(str(game.get("screen")) == "select", "Bio Back returns to selection: " + id)
+
+    # Re-select Bryan and confirm to the Act 1 placeholder.
+    await _click_named("SelectHeroBryan")
+    await _click_named("ContinueSelectionButton")
+    await _click_named("ConfirmHeroButton")
+    _check(str(game.get("screen")) == "act1_map", "Single Player confirmation opens Act 1")
+    await _capture("06_act1_map")
+
+    # Return to Play, verify Multiplayer follows the same select/bio route.
+    await _click_named("BackFromMapButton")
+    await _click_named("BackFromSelectButton")
+    _check(str(game.get("screen")) == "play", "Back returns to mode selection")
+    await _click_named("MultiplayerModeButton")
+    _check(str(game.get("screen")) == "select", "Multiplayer leads to character selection")
+    await _click_named("SelectHeroCristianHb")
+    await _click_named("ContinueSelectionButton")
+    _check(str(game.get("screen")) == "bio", "Multiplayer also uses character bio")
+    await _click_named("ConfirmHeroButton")
+    _check(str(game.get("screen")) == "lobby", "Multiplayer confirmation opens lobby placeholder")
+    await _capture("07_multiplayer_lobby")
+    await _click_named("BackFromLobbyButton")
+    _check(str(game.get("screen")) == "bio", "Lobby Back returns to bio")
+
+    # Preserve accessibility and regression tests for the original four-hero prototype.
+    await _click_named("BackFromBioButton")
+    await _click_named("BackFromSelectButton")
+    await _click_named("SinglePlayerModeButton")
+    await _click_named("SelectHeroBryan")
+    await _click_named("ContinueSelectionButton")
+    await _click_named("ConfirmHeroButton")
+    await _click_named("CombatPreviewButton")
+    _check(str(game.get("screen")) == "battle", "Combat Preview launches legacy encounter")
     var combat: AptitudeCombatEngine = game.get("combat") as AptitudeCombatEngine
-    _check(combat.party.size() == 4, "initial battle contains four hero units")
-    await _capture("04_combat")
-
+    _check(combat.party.size() == 4, "prototype encounter still has four heroes")
+    await _capture("08_combat_preview")
     await _click_text("DECK (")
-    _check(str(game.get("overlay_screen")) == "deck", "Deck button opens inventory")
-    await _capture("05_deck_inventory")
+    _check(str(game.get("overlay_screen")) == "deck", "Deck overlay opens")
+    await _capture("09_deck_inventory")
     await _click_text("CLOSE")
-    _check(str(game.get("overlay_screen")) == "", "Deck inventory closes")
-
     await _click_text("SETTINGS")
-    _check(str(game.get("overlay_screen")) == "settings", "Combat settings opens")
-    await _capture("06_combat_settings")
+    _check(str(game.get("overlay_screen")) == "settings", "Combat Settings opens")
+    await _capture("10_combat_settings")
     await _click_text("CLOSE")
-    _check(str(game.get("overlay_screen")) == "", "Combat settings closes")
 
-    # A deterministic card fixture only in this test process. No starter deck or data changes.
+    # Test card dragging, enemy targeting and victory exactly as before.
     var hero: Dictionary = combat.hero_by_id("bryan")
     combat.select_hero("bryan")
     hero["hand"].insert(0, "attack")
@@ -82,32 +128,35 @@ func _run() -> void:
     var card_center: Vector2 = Vector2(770.0 - width / 2.0 + 69.0, 760.0)
     var enemy_center := Vector2(1202.0, 465.0)
     var enemy_hp: int = int(combat.enemies[0]["hp"])
-
     await _mouse_move(card_center)
     _send_button(card_center, true)
     await _frames(2)
     _check(not (game.get("drag_state") as Dictionary).is_empty(), "card press starts drag")
     await _mouse_move(enemy_center)
     await _frames(3)
-    await _capture("07_drag_targeting")
+    await _capture("11_drag_targeting")
     _send_button(enemy_center, false)
     await _frames(3)
-    _check(int(combat.enemies[0]["hp"]) == enemy_hp - 1, "card drop on Roboduck deals damage")
-    await _capture("08_after_card_play")
-
-    # Deterministic victory fixture: display and screenshot only, not saved to the project.
+    _check(int(combat.enemies[0]["hp"]) == enemy_hp - 1, "Attack dropped on Roboduck deals damage")
+    await _capture("12_after_card_play")
     combat.enemies[0]["hp"] = 0
     combat.call("_check_outcome")
     combat.changed.emit()
     await _frames(3)
     _check(combat.phase == "victory", "victory state visible")
-    await _capture("09_victory")
+    await _capture("13_victory")
 
     if failures == 0:
-        print("PASS: graphical smoke test and screenshot capture")
+        print("PASS: menu flow, character bios, interactive combat preview and screenshots")
     else:
         push_error("FAIL: %d graphical smoke assertions" % failures)
     quit(1 if failures > 0 else 0)
+
+func _count_buttons(node: Node) -> int:
+    var total: int = 1 if node is Button else 0
+    for child in node.get_children():
+        total += _count_buttons(child)
+    return total
 
 func _frames(count: int) -> void:
     for _i in range(count):
