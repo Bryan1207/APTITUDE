@@ -1,7 +1,49 @@
-# APTITUDE: Rise of Alextron — v0.10.1 (Chalk Map & Character Framing)
+# APTITUDE: Rise of Alextron — v0.11.0 (Hero Cards, Bestiary & CharacterDex)
 
 **Godot 4.7.2** native Windows game prototype, built around four approved
 characters and deckbuilding combat inspired by the turn-based roguelike genre.
+
+## NEW: Four unique deckbuilding identities
+
+Version **v0.11.0** adds **24 original character-specific cards** (6 per
+hero: 3 Attacks, 2 Skills, 1 Power), designed for the existing 3-energy
+turn rhythm. Each card has data-driven cost/effects/rarity and its own
+editable SVG illustration in `art/cards/`.
+
+- **Bryan**: conductor attacks, Weak, Vulnerable, protecting and drawing.
+- **Carlos**: multi-hit nailgun offense, cheap moves, persistent Strength.
+- **Manny**: tactical debuffs, team Block, deck velocity and lasting Plating.
+- **Cristian & HB**: lift-based heavy attacks, guardrails and defensive powers.
+
+Winning combats now offers three weighted, distinct **hero-specific card
+rewards**. You may choose one or repair +8 HP. Those cards persist in the
+run's deck and are fully playable in later fights.
+
+## NEW: CharacterDex
+
+Open **Main Menu → CharacterDex** to browse **Heroes**, **Enemies**, or
+**Ability Cards**. Character and machine entries share one native Godot
+trading-card template with artwork, descriptions and stats:
+`scripts/trading_card.gd`. Every hero's approved combat model and biography
+are reused, while each new machine and ability has a unique original SVG
+asset.
+
+The roster now includes **eight new non-boss machines** in addition to
+Roboduck: Tesla Scout, Tesla Brute, Capacitor Bot, Rivet Drone, Arc Welder,
+Scaffold Spider, Cement Mixer MK-II and Foreman Droid. Their attacks,
+defensive actions, charge cycles and statuses are telegraphed.
+
+Fights now select from new themed encounter groups. Scrapyard machines use
+`art/backgrounds/yard_dusk.svg`; Teslabot crews use
+`art/backgrounds/teslabot_factory.svg`. Their wallpapers and sprite
+artwork are stored separately from enemy stats and moves.
+
+**The Act 1 boss is deliberately unchanged**; its art and mechanics are
+reserved for collaborative design.
+
+See `docs/CONTENT_EXPANSION.md` and `docs/CARD_ASSET_STANDARD.md`
+for balance assumptions, stats, directory standards and implementation
+details.
 
 ## Play flow
 
@@ -77,7 +119,7 @@ GitHub Actions runs two independent suites on every commit:
    seed/map/passive tests across **30 generated maps**, transparent asset
    margins for all four characters, and startup checks.
 2. **APTITUDE Graphical QA**: Godot 4.7.2 rendered at 1600×900 under a Linux
-   virtual desktop. It clicks real Godot buttons, drags a card in combat, goes
+   virtual desktop. It navigates CharacterDex, drags a card in combat, goes
    through the scrollable map/reward/shop/rest/event screens, inspects each hero
    in combat, checks the yellow selected route, and verifies boss completion.
 

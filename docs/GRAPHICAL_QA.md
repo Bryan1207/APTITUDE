@@ -60,6 +60,14 @@ approved assets. Full 15-floor route legality is verified separately in
 `tests/act1_run_test.gd`. Interaction or rendering assertions cause the job to fail.
 Logs and any available screenshots are uploaded **even on failure**.
 
+27. `19_yard_wallpaper.png` — new scrapyard background and Arc Welder
+28. `20_teslabot_factory_wallpaper.png` — Tesla factory with two Scouts
+
+The Main Menu CharacterDex also includes:
+- `02_character_dex_heroes.png`
+- `02_character_dex_enemies.png`
+- `02_character_dex_abilities.png`
+
 ## Review screenshots
 
 Go to GitHub → Actions → **APTITUDE Graphical QA** → latest run →
