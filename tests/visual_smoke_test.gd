@@ -280,6 +280,28 @@ func _run() -> void:
         game.call("_redraw")
         await _frames(4)
 
+    # Original themed backgrounds load in the actual Godot combat scene.
+    game.set("screen", "battle")
+    combat.start(["bryan"], "yard_welders", {"scale_for_party":true})
+    game.call("_redraw")
+    await _frames(4)
+    _check(combat.battlefield_background.ends_with("yard_dusk.svg"),
+        "machine yard uses its own battlefield wallpaper")
+    _check(str(combat.enemies[0]["type_id"]) == "arc_welder",
+        "yard scene spawns original Arc Welder")
+    await _capture("19_yard_wallpaper")
+    combat.start(["bryan"], "teslabot_patrol", {"scale_for_party":true})
+    game.call("_redraw")
+    await _frames(4)
+    _check(combat.battlefield_background.ends_with("teslabot_factory.svg"),
+        "Tesla machines use unique factory wallpaper")
+    _check(combat.enemies.size() == 2,
+        "factory encounter spawns two separate Teslabots")
+    await _capture("20_teslabot_factory_wallpaper")
+    game.set("screen", "home")
+    game.call("_redraw")
+    await _frames(4)
+
     # Multiplayer follows the same character select/bio flow but stays a placeholder.
     await _click_named("PlayMainMenuButton")
     await _click_named("MultiplayerModeButton")
