@@ -103,8 +103,13 @@ until the user and designer approve its actual design together.
   exhausts after resolving.
 - **Target overrides**: an Attack can hit an enemy then draw for its caster
   without applying draw to the machine.
-- **Enemy patterns**: next action is presented above each living enemy.
+- **Enemy patterns**: next action is presented above each living enemy, including
+  the number of Weak or Vulnerable stacks it will apply.
   Old Roboduck and prototype boss retain their original fixed attack behavior.
+- **Enemy-applied debuffs**: Weak and Vulnerable newly inflicted during an enemy
+  phase survive into the next player turn. Only stacks present before that enemy
+  phase tick at its end. Arc Welder applies **2 Vulnerable** so its guard turn
+  does not waste the debuff before its follow-up strike.
 
 This remains an early balance pass: enemy HP/damage is scaled by the existing
 solo difficulty toggle and no player win-rate dataset exists yet.

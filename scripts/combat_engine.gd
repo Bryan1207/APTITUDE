@@ -316,10 +316,24 @@ func enemy_intent_text(enemy: Dictionary) -> String:
 			if int(enemy.get("weak", 0)) > 0:
 				attack_damage = maxi(1, roundi(float(attack_damage) * 0.75))
 			var hits: int = maxi(1, int(move.get("hits", 1)))
-			return "⚔ %d" % attack_damage + (" ×%d" % hits if hits > 1 else "") + (" !" if kind != "attack" else "")
+			var effect_note: String = ""
+			if kind == "attack_weak":
+				effect_note = " Weak %d" % int(move.get("status", 1))
+			elif kind == "attack_vulnerable":
+				effect_note = " Vuln %d" % int(move.get("status", 1))
+			return "⚔ %d" % attack_damage + (" ×%d" % hits if hits > 1 else "") + effect_note
 
 func _enemy_phase() -> void:
 	phase = "enemy"
+	# Tick only debuffs that were present before this enemy phase. Otherwise
+	# a machine applying Weak or Vulnerable would clear its own effect before
+	# the hero ever gets a chance to act or suffer the follow-up attack.
+	var prior_hero_debuffs: Dictionary = {}
+	for hero in party:
+		prior_hero_debuffs[str(hero["id"])] = {
+			"weak": int(hero.get("weak", 0)),
+			"vulnerable": int(hero.get("vulnerable", 0))
+		}
 	for enemy in enemies:
 		if int(enemy["hp"]) <= 0:
 			continue
@@ -373,8 +387,11 @@ func _enemy_phase() -> void:
 		hero["hand"].clear()
 		if int(hero["hp"]) > 0:
 			_draw(hero, int(heroes[str(hero["id"])]["draw_count"]) + int(hero.get("focus", 0)))
-		hero["weak"] = maxi(0, int(hero.get("weak", 0)) - 1)
-		hero["vulnerable"] = maxi(0, int(hero.get("vulnerable", 0)) - 1)
+		var previous: Dictionary = prior_hero_debuffs[str(hero["id"])]
+		if int(previous["weak"]) > 0:
+			hero["weak"] = maxi(0, int(hero.get("weak", 0)) - 1)
+		if int(previous["vulnerable"]) > 0:
+			hero["vulnerable"] = maxi(0, int(hero.get("vulnerable", 0)) - 1)
 	log_line("Round %d begins" % round_number)
 
 func _check_outcome() -> void:

@@ -137,7 +137,7 @@
       {
         "kind": "attack_vulnerable",
         "power": 1,
-        "status": 1
+        "status": 2
       },
       {
         "kind": "guard",

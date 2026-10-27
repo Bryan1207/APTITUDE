@@ -11,6 +11,7 @@ func _initialize() -> void:
     _check_card_library()
     _check_cards_resolve()
     _check_enemy_bestiary()
+    _test_enemy_debuff_lifecycle()
     _check_encounter_groups()
     _check_reward_pool()
     if failures == 0:
@@ -111,6 +112,48 @@ func _check_enemy_bestiary() -> void:
         "scrapyard theme is imported")
     _check(ResourceLoader.exists("res://art/backgrounds/teslabot_factory.svg"),
         "teslabot factory theme is imported")
+
+func _test_enemy_debuff_lifecycle() -> void:
+    # Foreman's Weak should affect the NEXT player turn, not disappear
+    # immediately after the enemy that applies it finishes attacking.
+    var foreman: AptitudeCombatEngine = Combat.new()
+    foreman.start(["bryan"], "teslabot_foreman", {"scale_for_party":true})
+    var hero: Dictionary = foreman.hero_by_id("bryan")
+    foreman.mark_done("bryan") # Round 1: charge; Round 2 intent is Weak.
+    _check(foreman.enemy_intent_text(foreman.enemies[0]).contains("Weak 1"),
+        "Foreman telegraphs its Weak effect and stack count")
+    foreman.mark_done("bryan") # Round 2: apply Weak 1.
+    _check(int(hero["weak"]) == 1,
+        "machine-applied Weak survives to the next player turn")
+    hero["hand"].insert(0, "bryan_conduit_jab")
+    var before_enemy_hp: int = int(foreman.enemies[0]["hp"])
+    _check(foreman.submit_card("bryan", 0, "foreman_droid_1") == "",
+        "Weak hero can still play a legal attack")
+    _check(int(foreman.enemies[0]["hp"]) == before_enemy_hp - 2,
+        "Weak reduces Conduit Jab from 3 to 2 damage")
+    foreman.mark_done("bryan") # Round 3: no new Weak applied.
+    _check(int(hero["weak"]) == 0,
+        "Weak expires after the affected player turn")
+
+    # The Welder's windup is attack/debuff, guard, then heavy attack.
+    # Two stacks let Vulnerable matter on its next damaging turn.
+    var welder: AptitudeCombatEngine = Combat.new()
+    welder.start(["bryan"], "yard_welders", {"scale_for_party":true})
+    var target: Dictionary = welder.hero_by_id("bryan")
+    _check(welder.enemy_intent_text(welder.enemies[0]).contains("Vuln 2"),
+        "Welder telegraphs Vulnerable and its duration")
+    welder.mark_done("bryan") # Round 1: debuff.
+    _check(int(target["vulnerable"]) == 2,
+        "newly applied Vulnerable persists into the next round")
+    welder.mark_done("bryan") # Round 2: guard.
+    _check(int(target["vulnerable"]) == 1,
+        "Vulnerable ticks once after the intervening guard turn")
+    var before_hero_hp: int = int(target["hp"])
+    welder.mark_done("bryan") # Round 3: 4 base damage -> 6 with Vulnerable.
+    _check(int(target["hp"]) == before_hero_hp - 6,
+        "Welder's follow-up attack benefits from Vulnerable")
+    _check(int(target["vulnerable"]) == 0,
+        "Vulnerable expires after the damaging follow-up")
 
 func _check_encounter_groups() -> void:
     var data: Dictionary = _read("res://data/encounters.json")
