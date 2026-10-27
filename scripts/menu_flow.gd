@@ -139,7 +139,7 @@ func _texture(parent: Control, path: String, rect: Rect2, cover: bool = false) -
     image.position = rect.position
     image.size = rect.size
     image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT
     image.mouse_filter = Control.MOUSE_FILTER_IGNORE
     parent.add_child(image)
 
