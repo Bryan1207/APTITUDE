@@ -1,4 +1,4 @@
-# APTITUDE: Rise of Alextron — v0.10.0 (Milestone 2)
+# APTITUDE: Rise of Alextron — v0.10.1 (Chalk Map & Character Framing)
 
 **Godot 4.7.2** native Windows game prototype, built around four approved
 characters and deckbuilding combat inspired by the turn-based roguelike genre.
@@ -8,10 +8,16 @@ characters and deckbuilding combat inspired by the turn-based roguelike genre.
 Main Menu → Play → Single Player → choose one hero → Character Bio → Confirm →
 **Act 1: The Construction Zone**.
 
-- **15 encounter floors** with three visible nodes on each floor and connected
-  paths generated from a displayed random seed.
+- **15 encounter floors** with three starting choices and **2–5 randomly
+  placed nodes on later floors**, connected by reproducible seeded routes.
+  Only one node is visited per floor.
 - Three paths are available from the first floor; players choose one reachable
-  node per floor with **no backtracking**.
+  node per floor with **no backtracking** and no floor skipping.
+- **Scrollable map**: start near the bottom and scroll toward the boss. Thin
+  white chalk lines and six chalk-style icons (normal combat = crossed swords).
+  Only the **chosen route** receives a broad yellow highlighter effect.
+- The map shares **the exact header construction** (logo, coins, potion slots,
+  Deck and Settings controls) with the existing combat screen.
 - **Mandatory floor-16 boss**: Alextron's Sentinel. Defeat it to finish Act 1;
   Act 2 is marked *Coming Soon*.
 - Nodes include combat, elite combat, event, shop and rest.
@@ -38,7 +44,10 @@ There is no Custom mode.
 All four start with 60 HP in the prototype. Character biographies and art are
 separate, reusable resources in `data/character_bios.json` and
 `art/characters/<hero>/`. Approved original assets in `art/heroes/` have
-**not been altered**.
+**not been altered**. A shared, cached framing layer adds a transparent
+safety margin to combat sprites, selection portraits and bio art. This avoids
+UI-edge clipping without distorting the approved images. Artwork pixels already
+missing at a source image's edge cannot be recreated by framing alone.
 
 ## First-pass Act 1 encounter economy
 
@@ -65,10 +74,12 @@ Open `project.godot` in Godot 4.7.2 and press F5.
 GitHub Actions runs two independent suites on every commit:
 
 1. **APTITUDE Windows Godot Tests**: Windows asset import, battle tests, Act 1
-   seed/map/passive tests, and startup checks.
+   seed/map/passive tests across **30 generated maps**, transparent asset
+   margins for all four characters, and startup checks.
 2. **APTITUDE Graphical QA**: Godot 4.7.2 rendered at 1600×900 under a Linux
    virtual desktop. It clicks real Godot buttons, drags a card in combat, goes
-   through the map/reward/shop/rest/event screens, and checks boss completion.
+   through the scrollable map/reward/shop/rest/event screens, inspects each hero
+   in combat, checks the yellow selected route, and verifies boss completion.
 
 Open GitHub → **Actions** → latest **APTITUDE Graphical QA** → Artifacts →
 `aptitude-graphical-qa` to download original-size screenshots and logs.

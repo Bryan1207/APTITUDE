@@ -34,6 +34,7 @@ and saves images in `test-results/screenshots/`:
 7. `05_bio_manny.png` — Manny's biography and passive
 8. `05_bio_cristian_hb.png` — Cristian & HB's biography and passive
 9. `06_act1_branching_map.png` — three available starting paths
+10. `06_boss_map_top.png` — map scrolled up toward the boss
 10. `07_solo_combat.png` — single hero with scaled enemy
 11. `08_deck_inventory.png` — current hero deck
 12. `09_combat_settings.png` — combat settings overlay
@@ -41,6 +42,7 @@ and saves images in `test-results/screenshots/`:
 14. `11_after_card_play.png` — verified card damage
 15. `12_victory_reward.png` — choose a reward
 16. `13_map_after_reward.png` — deck and coin persistence
+17. `13_yellow_route_marker.png` — two visited nodes and the yellow marked connection
 17. `14_event.png` — event choices
 18. `14_shop.png` — shop choices
 19. `14_rest.png` — rest choices
@@ -48,6 +50,9 @@ and saves images in `test-results/screenshots/`:
 21. `15_boss_combat.png` — boss encounter
 22. `16_act1_complete.png` — Act 1 complete
 23. `17_multiplayer_lobby.png` — multiplayer placeholder
+24. `18_sprite_carlos.png` — Carlos's approved combat sprite, safely framed
+25. `18_sprite_manny.png` — Manny's approved combat sprite, safely framed
+26. `18_sprite_cristian_hb.png` — Cristian & HB's approved scissor lift in combat
 
 Test-only fixtures force a known Attack, accelerated encounter wins and a boss-map jump;
 they modify **only the in-memory test process**, not the game project or

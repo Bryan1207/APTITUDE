@@ -5,9 +5,20 @@
 A single-player run starts with exactly **one of the four chosen heroes**.
 Single Player confirmation creates a new `AptitudeAct1Run` instance and a
 seeded map. The displayed seed is reproducible in engine tests.
+The generator guarantees every node has a route from an earlier floor and a
+connection to a later floor; floor counts and positions vary with each seed.
 
-- **15 rows × 3 nodes**, visible at once; choices connect only to the next
-  row and cannot be revisited.
+- **15 floors** (first floor: 3 options; later floors: 2–5 irregular nodes
+  spread across 9 possible horizontal lanes), plus one mandatory boss.
+  Routes connect only to the next floor and cannot be revisited.
+- A **scrollable, dark, uncluttered blueprint map** keeps 15 floors legible
+  rather than compressing everything into 900 pixels.
+- Nodes are drawn in vector-like white chalk (combat = crossed swords, elite =
+  skull, event = question mark, shop = dollar sign, rest = cross, boss = crown).
+- Player-visited connections are colored with a broad, translucent yellow
+  highlighter. Unvisited paths remain fine, faint white lines.
+- The map and battle use one shared native Godot header, so layout and click
+  targets cannot drift independently.
 - **Floor 16** has a single mandatory Alextron Sentinel boss node.
 - Map node choices: Combat, Elite, Rest, Shop, Event.
 - Combat uses the existing FIFO card execution engine.
@@ -65,8 +76,9 @@ between encounters, but exiting the game does not save or resume a run.
 
 - `tests/simple_cards_test.gd` — existing combat rules and four-hero regressions
 - `tests/combat_smoke_test.gd` — FIFO and basic targeting
-- `tests/act1_run_test.gd` — seeded maps, path legality, mandatory boss,
-  persistence, passive mechanics, and solo enemy scaling
+- `tests/act1_run_test.gd` — seeded maps, 30-seed reachability and density
+  checks, mandatory boss, passives, solo scaling, and safety frames for twelve
+  menu/combat character-art resources
 - `tests/visual_smoke_test.gd` — real Godot menu clicks, actual selected-hero
   combat, targeting, reward/shop/event/rest buttons, Act 1 completion, and
   multiplayer lobby placeholder
