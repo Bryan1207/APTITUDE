@@ -10,6 +10,7 @@ var failures: int = 0
 func _initialize() -> void:
     _check_card_library()
     _check_cards_resolve()
+    _test_hb_signature_effects()
     _check_enemy_bestiary()
     _test_enemy_debuff_lifecycle()
     _check_encounter_groups()
@@ -125,6 +126,70 @@ func _check_enemy_bestiary() -> void:
         "scrapyard theme is imported")
     _check(ResourceLoader.exists("res://art/backgrounds/teslabot_factory.svg"),
         "teslabot factory theme is imported")
+
+func _test_hb_signature_effects() -> void:
+    # Six additional HB cards use the same combined Cristian & HB slot.
+    var game: AptitudeCombatEngine = Combat.new()
+    var duo: Dictionary = {}
+    var robot: Dictionary = {}
+    var before_hp: int = 0
+
+    game.start(["cristian_hb"], "city_intro", {"apply_passives":true})
+    duo = game.hero_by_id("cristian_hb")
+    robot = game.enemies[0]
+    duo["hand"].insert(0, "cristian_hb_impact_driver")
+    before_hp = int(robot["hp"])
+    _check(game.submit_card("cristian_hb", 0, "roboduck_1") == "",
+        "HB Impact Driver is playable by the combined unit")
+    _check(int(robot["hp"]) == before_hp - 4,
+        "Impact Driver deals two separate 2-damage hits")
+
+    game.start(["cristian_hb"], "city_intro", {"apply_passives":true})
+    duo = game.hero_by_id("cristian_hb")
+    robot = game.enemies[0]
+    duo["hand"].insert(0, "cristian_hb_hot_tap")
+    _check(game.submit_card("cristian_hb", 0, "roboduck_1") == "",
+        "HB Hot Tap is playable")
+    _check(int(robot["hp"]) == int(robot["max_hp"]) - 3
+        and int(robot["vulnerable"]) == 1,
+        "Hot Tap damages and exposes the targeted robot")
+
+    game.start(["cristian_hb"], "city_intro", {"apply_passives":true})
+    duo = game.hero_by_id("cristian_hb")
+    robot = game.enemies[0]
+    duo["hand"].insert(0, "cristian_hb_breaker_trip")
+    _check(game.submit_card("cristian_hb", 0, "roboduck_1") == "",
+        "HB Breaker Trip is playable")
+    _check(int(robot["hp"]) == int(robot["max_hp"]) - 5
+        and int(robot["weak"]) == 2,
+        "Breaker Trip deals 5 and applies two Weak")
+
+    game.start(["cristian_hb"], "city_intro", {"apply_passives":true})
+    duo = game.hero_by_id("cristian_hb")
+    duo["hand"].insert(0, "cristian_hb_tie_off")
+    _check(game.submit_card("cristian_hb", 0, "cristian_hb") == "",
+        "HB Tie-Off is playable")
+    _check(int(duo["block"]) == 5 and duo["hand"].size() == 7,
+        "Tie-Off adds 3 Block on top of passive and draws two cards")
+
+    game.start(["cristian_hb"], "city_intro", {"apply_passives":true})
+    duo = game.hero_by_id("cristian_hb")
+    duo["hand"].insert(0, "cristian_hb_ground_clamp")
+    _check(game.submit_card("cristian_hb", 0, "cristian_hb") == "",
+        "HB Ground Clamp is playable")
+    _check(int(duo["block"]) == 5 and int(duo["energy"]) == 3,
+        "Ground Clamp grants 3 free Block")
+
+    game.start(["cristian_hb"], "city_intro", {"apply_passives":true})
+    duo = game.hero_by_id("cristian_hb")
+    duo["hand"].insert(0, "cristian_hb_power_bank")
+    _check(game.submit_card("cristian_hb", 0, "cristian_hb") == "",
+        "HB Power Bank is playable")
+    _check(int(duo["strength"]) == 1 and int(duo["focus"]) == 1,
+        "Power Bank grants Strength and lasting card draw")
+    game.mark_done("cristian_hb")
+    _check(duo["hand"].size() == 6 and int(duo["strength"]) == 1,
+        "Power Bank's draw bonus applies on the next round")
 
 func _test_enemy_debuff_lifecycle() -> void:
     # Foreman's Weak should affect the NEXT player turn, not disappear
