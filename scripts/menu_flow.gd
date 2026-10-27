@@ -242,14 +242,14 @@ func _open_dex(category: String) -> void:
 func _draw_character_dex() -> void:
     var canvas := _screen_background()
     _header(canvas, "CHARACTERDEX", "THE CREW  •  ALEXTRON'S MACHINES  •  ABILITIES")
-    _panel(canvas, Rect2(82, 233, 1436, 525), Color("12202e"), Color("8d7857"))
-    _button(canvas, "DexHeroesButton", "HEROES", Rect2(350, 188, 261, 52), _open_dex.bind("heroes"), dex_category == "heroes")
-    _button(canvas, "DexEnemiesButton", "ENEMIES", Rect2(668, 188, 261, 52), _open_dex.bind("enemies"), dex_category == "enemies")
-    _button(canvas, "DexAbilitiesButton", "ABILITY CARDS", Rect2(985, 188, 261, 52), _open_dex.bind("abilities"), dex_category == "abilities")
+    _panel(canvas, Rect2(82, 278, 1436, 480), Color("12202e"), Color("8d7857"))
+    _button(canvas, "DexHeroesButton", "HEROES", Rect2(350, 219, 261, 52), _open_dex.bind("heroes"), dex_category == "heroes")
+    _button(canvas, "DexEnemiesButton", "ENEMIES", Rect2(668, 219, 261, 52), _open_dex.bind("enemies"), dex_category == "enemies")
+    _button(canvas, "DexAbilitiesButton", "ABILITY CARDS", Rect2(985, 219, 261, 52), _open_dex.bind("abilities"), dex_category == "abilities")
     var viewport := ScrollContainer.new()
     viewport.name = "CharacterDexScroll"
-    viewport.position = Vector2(101, 253)
-    viewport.size = Vector2(1400, 489)
+    viewport.position = Vector2(101, 294)
+    viewport.size = Vector2(1400, 450)
     viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     viewport.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
     canvas.add_child(viewport)
@@ -552,9 +552,9 @@ func _draw_act1_action(destination: String) -> void:
         Rect2(292, 269, 1024, 56), 24, MUTED, true)
     match destination:
         "act1_reward":
-            _add_label(canvas, "COMBAT VICTORY", Rect2(347, 245, 922, 70), 41, GOLD, true)
+            _add_label(canvas, "COMBAT VICTORY", Rect2(347, 326, 922, 53), 38, GOLD, true)
             _add_label(canvas, "Choose one new card for your deck, or repair your gear.",
-                Rect2(347, 314, 922, 40), 19, TEXT, true)
+                Rect2(347, 394, 922, 34), 19, TEXT, true)
             var all_cards: Dictionary = _load_dex_file(ABILITY_DEFINITIONS)
             for index in range(run.reward_options.size()):
                 var card_id: String = run.reward_options[index]
@@ -562,20 +562,20 @@ func _draw_act1_action(destination: String) -> void:
                     continue
                 var reward: Dictionary = all_cards[card_id]
                 var x: float = 313.0 + float(index) * 341.0
-                _panel(canvas, Rect2(x, 375, 295, 275),
+                _panel(canvas, Rect2(x, 440, 295, 214),
                     Color("162a37"), Color("a78a58"))
                 _texture(canvas, "res://art/cards/%s.svg" % card_id,
-                    Rect2(x + 81, 385, 133, 112))
+                    Rect2(x + 97, 447, 101, 87))
                 _add_label(canvas, str(reward.get("name", card_id)),
-                    Rect2(x + 12, 499, 271, 35), 22, GOLD, true)
+                    Rect2(x + 12, 537, 271, 30), 22, GOLD, true)
                 _add_label(canvas, "%s • %d ENERGY" %
                     [str(reward.get("type", "")).to_upper(), int(reward.get("cost", 0))],
-                    Rect2(x + 16, 532, 263, 28), 14, MUTED, true)
+                    Rect2(x + 16, 564, 263, 27), 14, MUTED, true)
                 _button(canvas, "RewardCard%dButton" % index, "ADD TO DECK",
-                    Rect2(x + 29, 578, 239, 58), _resolve_action.bind(card_id),
+                    Rect2(x + 29, 601, 239, 43), _resolve_action.bind(card_id),
                     index == 0)
             _button(canvas, "RewardRepairButton", "REPAIR +8 HP INSTEAD",
-                Rect2(614, 677, 366, 52), _resolve_action.bind("repair"))
+                Rect2(614, 682, 366, 50), _resolve_action.bind("repair"))
         "act1_rest":
             _add_label(canvas, "REST SITE", Rect2(347, 347, 922, 68), 43, GOLD, true)
             _add_label(canvas, "Repair yourself or reinforce your maximum HP.", Rect2(347, 428, 922, 45), 21, TEXT, true)
