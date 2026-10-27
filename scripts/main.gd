@@ -38,6 +38,15 @@ func _ready() -> void:
 	combat.changed.connect(_on_combat_changed)
 	_redraw()
 
+# Stop the streaming MP3 before its AudioStreamPlayer is destroyed. On
+# Godot 4.7.2 the active AudioStreamPlaybackMP3 otherwise retains the imported
+# AudioStreamMP3 at shutdown, leaking two ObjectDB instances in CI.
+func _exit_tree() -> void:
+	if is_instance_valid(music_player):
+		music_player.stop()
+		music_player.stream = null
+		music_player = null
+
 func _start_music() -> void:
 	music_player = AudioStreamPlayer.new()
 	music_player.name = "BackgroundMusic"
