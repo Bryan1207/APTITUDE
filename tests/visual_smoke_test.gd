@@ -45,6 +45,22 @@ func _run() -> void:
     await _capture("02_main_settings")
     await _click_text("CLOSE")
     _check(str(game.get("overlay_screen")) == "", "Settings closes")
+    # CharacterDex is a full main-menu feature, not a placeholder.
+    await _click_named("CharacterDexMenuButton")
+    _check(str(game.get("screen")) == "character_dex", "CharacterDex opens from main menu")
+    var gallery: Node = _find_named(game, "CharacterDexGrid")
+    _check(gallery != null and gallery.get_child_count() == 4, "four hero trading cards displayed")
+    await _capture("02_character_dex_heroes")
+    await _click_named("DexEnemiesButton")
+    gallery = _find_named(game, "CharacterDexGrid")
+    _check(gallery != null and gallery.get_child_count() == 9, "nine non-boss machines have trading cards")
+    await _capture("02_character_dex_enemies")
+    await _click_named("DexAbilitiesButton")
+    gallery = _find_named(game, "CharacterDexGrid")
+    _check(gallery != null and gallery.get_child_count() == 24, "all 24 unique ability cards displayed")
+    await _capture("02_character_dex_abilities")
+    await _click_named("CharacterDexBackButton")
+    _check(str(game.get("screen")) == "home", "CharacterDex Back returns to main menu")
     await _click_named("PlayMainMenuButton")
     _check(str(game.get("screen")) == "play", "Play opens mode selection")
     await _capture("03_play_modes")
@@ -148,9 +164,12 @@ func _run() -> void:
     _check(str(game.get("screen")) == "act1_reward", "victory advances to reward selection")
     _check(run.coins == 25, "coins persist after fight")
     await _capture("12_victory_reward")
-    await _click_named("RewardAttackButton")
+    _check(run.reward_options.size() == 3, "combat reward presents three unique hero cards")
+    var acquired_card: String = run.reward_options[0]
+    await _click_named("RewardCard0Button")
     _check(str(game.get("screen")) == "act1_map", "reward returns to branching map")
-    _check(run.deck.size() == 11, "chosen reward persists as eleventh card")
+    _check(run.deck.size() == 11 and run.deck.has(acquired_card),
+        "unique hero card reward persists in run deck")
     _check(run.current_floor == 0, "map progress persists after battle")
     await _capture("13_map_after_reward")
 
@@ -168,7 +187,7 @@ func _run() -> void:
                 combat.call("_check_outcome")
                 combat.changed.emit()
                 await _frames(3)
-                await _click_named("RewardBlockButton")
+                await _click_named("RewardCard0Button")
             "event":
                 await _click_named("EventSalvageButton")
             "shop":
