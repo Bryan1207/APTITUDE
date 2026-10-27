@@ -6,7 +6,7 @@ extends RefCounted
 ## Multiplayer network authority will be built separately.
 
 const FLOOR_COUNT := 15
-const LANES := 3
+const LANES := 9
 const HERO_IDS := ["bryan", "carlos", "manny", "cristian_hb"]
 const STARTER_DECK := ["attack", "attack", "attack", "attack", "attack",
     "block", "block", "block", "block", "demon"]
@@ -67,31 +67,104 @@ func _kind_for(floor_index: int, lane: int) -> String:
         return "rest"
     return "elite"
 
+## Irregular deterministic topology: first sample non-uniform node positions,
+## then connect each floor in both directions (no orphaned nodes).
+## Connections always move exactly one floor, never skip an encounter.
+func _pick_lanes(amount: int) -> Array[int]:
+    var pool: Array[int] = []
+    for lane in range(LANES):
+        pool.append(lane)
+    for i in range(pool.size() - 1, 0, -1):
+        var swap_index: int = rng.randi_range(0, i)
+        var temp: int = pool[i]
+        pool[i] = pool[swap_index]
+        pool[swap_index] = temp
+    var chosen: Array[int] = []
+    for i in range(amount):
+        chosen.append(pool[i])
+    chosen.sort()
+    return chosen
+
+func _nearest(nodes: Array, lane: int) -> Dictionary:
+    var closest: Dictionary = nodes[0]
+    var distance: int = absi(int(closest["lane"]) - lane)
+    for candidate in nodes:
+        var candidate_distance: int = absi(int(candidate["lane"]) - lane)
+        if candidate_distance < distance:
+            closest = candidate
+            distance = candidate_distance
+    return closest
+
+func _has_edge(source: Dictionary, target: Dictionary) -> bool:
+    return (source["next"] as Array).has(str(target["id"]))
+
+func _edge_crosses(row: Array, source: Dictionary, target: Dictionary) -> bool:
+    var a: int = int(source["lane"])
+    var b: int = int(target["lane"])
+    for other in row:
+        var c: int = int(other["lane"])
+        for connected_id in other["next"]:
+            var connected: Dictionary = node_by_id(str(connected_id))
+            var d: int = int(connected["lane"])
+            # Shared source and shared target are legal; other crossings aren't.
+            if a < c and b > d:
+                return true
+            if a > c and b < d:
+                return true
+    return false
+
+func _try_edge(row: Array, source: Dictionary, target: Dictionary) -> bool:
+    if _has_edge(source, target):
+        return true
+    if _edge_crosses(row, source, target):
+        return false
+    (source["next"] as Array).append(str(target["id"]))
+    return true
+
 func _generate_map() -> void:
     floors.clear()
+    # Start with exactly three options; following rows fluctuate between 2 and 5.
     for level in range(FLOOR_COUNT):
         var row: Array = []
-        for lane in range(LANES):
+        var node_count: int = 3 if level == 0 else rng.randi_range(2, 5)
+        var columns: Array[int] = _pick_lanes(node_count)
+        for lane in columns:
             row.append({
                 "id": _node_id(level, lane),
                 "floor": level,
                 "lane": lane,
+                "jitter": rng.randf_range(-11.0, 11.0),
                 "kind": _kind_for(level, lane),
                 "next": []
             })
         floors.append(row)
+
     for level in range(FLOOR_COUNT - 1):
-        for lane in range(LANES):
-            var connections: Array = [_node_id(level + 1, lane)]
-            if lane > 0 and rng.randf() < 0.65:
-                connections.append(_node_id(level + 1, lane - 1))
-            if lane < LANES - 1 and rng.randf() < 0.65:
-                connections.append(_node_id(level + 1, lane + 1))
-            floors[level][lane]["next"] = connections
-    boss = {"id":"alextron_boss", "floor":FLOOR_COUNT, "lane":1,
-        "kind":"boss", "next":[]}
-    for lane in range(LANES):
-        floors[FLOOR_COUNT - 1][lane]["next"] = [str(boss["id"])]
+        var row: Array = floors[level]
+        var following: Array = floors[level + 1]
+        # Every existing node must have an outgoing connection.
+        for source in row:
+            var closest: Dictionary = _nearest(following, int(source["lane"]))
+            (source["next"] as Array).append(str(closest["id"]))
+        # Every new node needs an incoming route so all nodes are reachable.
+        for target in following:
+            var closest_source: Dictionary = _nearest(row, int(target["lane"]))
+            _try_edge(row, closest_source, target)
+        # Add bounded extra branching/merging without crisscrossed wires.
+        for source in row:
+            if rng.randf() > 0.50:
+                continue
+            var nearest_node: Dictionary = _nearest(following, int(source["lane"]))
+            var closest_index: int = following.find(nearest_node)
+            var step: int = -1 if rng.randf() < 0.5 else 1
+            var alternative: int = closest_index + step
+            if alternative >= 0 and alternative < following.size():
+                _try_edge(row, source, following[alternative])
+
+    boss = {"id":"alextron_boss", "floor":FLOOR_COUNT,
+        "lane":LANES / 2, "jitter":0.0, "kind":"boss", "next":[]}
+    for node in floors[FLOOR_COUNT - 1]:
+        node["next"] = [str(boss["id"])]
 
 func node_by_id(id: String) -> Dictionary:
     if id == str(boss.get("id", "")):
