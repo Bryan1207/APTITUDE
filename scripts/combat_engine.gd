@@ -279,7 +279,9 @@ func mark_done(hero_id: String) -> void:
 	if phase != "player":
 		return
 	var hero: Dictionary = hero_by_id(hero_id)
-	if hero.is_empty():
+	# A repeated Done request is a no-op. In a shared player phase it
+	# must not append duplicate log entries or broadcast a false change.
+	if hero.is_empty() or bool(hero["done"]) or int(hero["hp"]) <= 0:
 		return
 	hero["done"] = true
 	log_line(str(heroes[hero_id]["name"]) + " is Done")
